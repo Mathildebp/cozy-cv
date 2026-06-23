@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(grep -E \"\\\\.\\(js|ts|json\\)$\")",
+      "Bash(command -v sips)",
+      "Bash(sips -z 384 640 public/assets/Objects/Wood_Bridge.png --out /tmp/bridge_big.png)",
+      "Bash(cd \"/Users/mathildebelda/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/2ba1e4c0-8719-4cd5-ae3d-ff74adf73e9f/e0850a33-cbf0-45e0-9c4d-9c27dc1c7d02/skills/kaplayjs-docs\" && grep -in \"sprite\\\\|\\\\.use\\\\b\\\\|getSprite\\\\|SpriteComp\" references/functions_reference.md references/all_names_index.md | head -40)",
+      "WebFetch(domain:kaplayjs.com)"
+    ]
+  }
+}

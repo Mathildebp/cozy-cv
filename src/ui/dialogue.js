@@ -1,0 +1,250 @@
+// Dialogue + choice UI, drawn in screen space (fixed) so it ignores the camera.
+//
+// Two promise-returning entry points cover every NPC interaction in the game:
+//   say(k, lines, opts)      -> resolves once the player has read every line
+//   choose(k, prompt, opts)  -> resolves to the index of the picked option
+//
+// While either is open, `dialogue.active` is true; the world scene checks this
+// to freeze player movement. The panel is a warm parchment rounded rect (drawn,
+// so it scales to any canvas size) with the pixel font on top and a blinking
+// "continue" indicator borrowed from the UI kit.
+
+import { speakBlip, duckMusic } from "../audio/sound.js";
+
+export const dialogue = { active: false };
+
+// Rejection value used when the player presses Escape to abort a conversation.
+// Callers (runInteraction) catch this to unwind the whole NPC interaction
+// instead of treating it as a real error.
+export const CANCELLED = Symbol("dialogue-cancelled");
+
+const PARCHMENT = [232, 211, 162];
+const PARCHMENT_EDGE = [214, 187, 130];
+const BORDER = [122, 90, 58];
+const INK = [74, 53, 38];
+
+const PANEL_H = 116;
+const MARGIN = 18;
+const PAD = 16;
+
+// Draw the shared parchment panel. Returns its on-screen rect each frame via the
+// passed callback so children can position themselves against it. `panelH`
+// defaults to PANEL_H but choice menus pass a taller value so every option fits.
+function addPanel(k, onLayout, panelH = PANEL_H) {
+  const panel = k.add([k.fixed(), k.layer("ui"), k.z(100)]);
+  panel.onDraw(() => {
+    const w = k.width();
+    const h = k.height();
+    const x = MARGIN;
+    const y = h - panelH - MARGIN;
+    const pw = w - MARGIN * 2;
+    // Soft drop shadow, parchment fill, then a double border for a cozy frame.
+    k.drawRect({ pos: k.vec2(x + 3, y + 4), width: pw, height: panelH, radius: 10, color: k.rgb(0, 0, 0), opacity: 0.18 });
+    k.drawRect({ pos: k.vec2(x, y), width: pw, height: panelH, radius: 10, color: k.rgb(...PARCHMENT_EDGE) });
+    k.drawRect({ pos: k.vec2(x + 4, y + 4), width: pw - 8, height: panelH - 8, radius: 8, color: k.rgb(...PARCHMENT), outline: { color: k.rgb(...BORDER), width: 2 } });
+    // Faint reminder, pinned bottom-left (the blinking continue cue owns the
+    // bottom-right), that Escape leaves the conversation.
+    k.drawText({ text: "Esc: leave", font: "sprout", size: 11, pos: k.vec2(x + 12, y + panelH - 12), anchor: "botleft", color: k.rgb(...BORDER), opacity: 0.55 });
+    onLayout?.({ x, y, w: pw, h: panelH });
+  });
+  return panel;
+}
+
+// Collect input handlers so we can detach them when the dialogue closes.
+function makeInput(k, onAdvance, onCancel) {
+  const handles = [
+    k.onKeyPress(["space", "enter"], onAdvance),
+    k.onMousePress(onAdvance),
+    k.onKeyPress("escape", onCancel),
+  ];
+  return () => handles.forEach((h) => h.cancel());
+}
+
+export function say(k, lines, opts = {}) {
+  const list = Array.isArray(lines) ? lines : [lines];
+  const speaker = opts.speaker ?? "";
+  const tint = opts.color ?? BORDER;
+
+  return new Promise((resolve, reject) => {
+    dialogue.active = true;
+    duckMusic(true); // step the ambient bed back so the speech blips read clearly
+    let layout = { x: MARGIN, y: 0, w: 200, h: PANEL_H };
+    const panel = addPanel(k, (l) => (layout = l));
+
+    const nameTag = k.add([
+      k.text("", { font: "sprout", size: 18 }),
+      k.color(...tint),
+      k.pos(0, 0),
+      k.fixed(),
+      k.layer("ui"),
+      k.z(101),
+    ]);
+    const body = k.add([
+      k.text("", { font: "sprout", size: 18, lineSpacing: 6, width: 100 }),
+      k.color(...INK),
+      k.pos(0, 0),
+      k.fixed(),
+      k.layer("ui"),
+      k.z(101),
+    ]);
+    const indicator = k.add([
+      k.sprite("dialogNext", { anim: "blink" }),
+      k.pos(0, 0),
+      k.scale(2),
+      k.fixed(),
+      k.layer("ui"),
+      k.z(101),
+      k.opacity(0),
+    ]);
+
+    let i = 0;
+    let shown = 0; // characters revealed of the current line
+    let done = false; // current line fully revealed
+    let blipped = 0; // index up to which we've emitted speech blips
+    const CPS = 45; // typewriter speed (chars/sec)
+
+    body.onUpdate(() => {
+      const nameH = speaker ? 24 : 0;
+      nameTag.pos = k.vec2(layout.x + PAD, layout.y + PAD - 4);
+      body.pos = k.vec2(layout.x + PAD, layout.y + PAD + nameH);
+      body.width = layout.w - PAD * 2;
+      indicator.pos = k.vec2(layout.x + layout.w - 40, layout.y + layout.h - 30);
+
+      if (!done) {
+        shown += CPS * k.dt();
+        const full = list[i];
+        if (shown >= full.length) {
+          shown = full.length;
+          done = true;
+          indicator.opacity = 1;
+        }
+        const reveal = Math.floor(shown);
+        // One blip per newly revealed letter, but only every other character so
+        // the chatter stays light; punctuation and spaces are silent beats.
+        while (blipped < reveal) {
+          const c = full[blipped];
+          if (blipped % 2 === 0 && /[a-z0-9]/i.test(c)) speakBlip(speaker, c);
+          blipped += 1;
+        }
+        body.text = full.slice(0, reveal);
+      }
+    });
+
+    nameTag.text = speaker;
+
+    const startLine = () => {
+      shown = 0;
+      blipped = 0;
+      done = false;
+      indicator.opacity = 0;
+      body.text = "";
+    };
+    startLine();
+
+    const teardown = () => {
+      cleanup();
+      k.destroy(panel);
+      k.destroy(nameTag);
+      k.destroy(body);
+      k.destroy(indicator);
+      duckMusic(false); // restore the ambient bed
+      dialogue.active = false;
+    };
+
+    const cleanup = makeInput(
+      k,
+      () => {
+        if (!done) {
+          // Reveal the rest of the line instantly on the first press, without
+          // firing a burst of blips for every skipped character.
+          shown = list[i].length;
+          blipped = list[i].length;
+          return;
+        }
+        i += 1;
+        if (i >= list.length) {
+          teardown();
+          resolve();
+        } else {
+          startLine();
+        }
+      },
+      () => {
+        teardown();
+        reject(CANCELLED);
+      },
+    );
+  });
+}
+
+// A prompt line plus a vertical list of selectable options. Returns the chosen
+// index. Up/Down (or W/S) move the cursor, Space/Enter/click confirm.
+const ROW_H = 22;
+const ROWS_TOP = 26; // gap between prompt and first option
+
+export function choose(k, prompt, options) {
+  return new Promise((resolve, reject) => {
+    dialogue.active = true;
+    // Grow the panel to fit the prompt plus every option so nothing is clipped.
+    const panelH = Math.max(PANEL_H, PAD + ROWS_TOP + options.length * ROW_H + PAD);
+    let layout = { x: MARGIN, y: 0, w: 200, h: panelH };
+    const panel = addPanel(k, (l) => (layout = l), panelH);
+
+    const promptText = k.add([
+      k.text(prompt, { font: "sprout", size: 18, width: 100 }),
+      k.color(...INK),
+      k.pos(0, 0),
+      k.fixed(),
+      k.layer("ui"),
+      k.z(101),
+    ]);
+
+    let sel = 0;
+    const rows = options.map((opt, idx) =>
+      k.add([
+        k.text("", { font: "sprout", size: 17 }),
+        k.color(...INK),
+        k.pos(0, 0),
+        k.fixed(),
+        k.layer("ui"),
+        k.z(101),
+        { idx, label: opt },
+      ]),
+    );
+
+    const refresh = () => {
+      rows.forEach((r) => {
+        r.text = (r.idx === sel ? "> " : "  ") + r.label;
+        r.color = r.idx === sel ? k.rgb(...BORDER) : k.rgb(...INK);
+      });
+    };
+    refresh();
+
+    promptText.onUpdate(() => {
+      promptText.pos = k.vec2(layout.x + PAD, layout.y + PAD - 4);
+      promptText.width = layout.w - PAD * 2;
+      const top = layout.y + PAD + ROWS_TOP;
+      rows.forEach((r, n) => (r.pos = k.vec2(layout.x + PAD + 8, top + n * ROW_H)));
+    });
+
+    const teardown = () => {
+      handles.forEach((h) => h.cancel());
+      k.destroy(panel);
+      k.destroy(promptText);
+      rows.forEach((r) => k.destroy(r));
+      dialogue.active = false;
+    };
+    const finish = (idx) => {
+      teardown();
+      resolve(idx);
+    };
+
+    const handles = [
+      k.onKeyPress(["down", "s"], () => { sel = (sel + 1) % options.length; refresh(); }),
+      k.onKeyPress(["up", "w"], () => { sel = (sel - 1 + options.length) % options.length; refresh(); }),
+      k.onKeyPress(["space", "enter"], () => finish(sel)),
+      k.onMousePress(() => finish(sel)),
+      k.onKeyPress("escape", () => { teardown(); reject(CANCELLED); }),
+    ];
+  });
+}
