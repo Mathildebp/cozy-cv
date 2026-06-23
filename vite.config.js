@@ -24,9 +24,9 @@ export default defineConfig({
         sourcemap: true,
         rollupOptions: {
             output: {
-                manualChunks: {
-                    kaplay: ["kaplay"],
-                    posthog: ["posthog-js"],
+                manualChunks(id) {
+                    if (id.includes("node_modules/kaplay")) return "kaplay";
+                    if (id.includes("node_modules/posthog-js")) return "posthog";
                 },
             },
         },
