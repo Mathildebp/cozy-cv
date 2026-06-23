@@ -394,14 +394,12 @@ export const ISLANDS = [
       "wwwwwggggggwwwww",
     ],
     objects: [
-      // --- Gerard's logic puzzle (left platform): just the two clues ---
-      // The riddle reads left-to-right: a clock = 3 (its hands) and a book = 7 (days
-      // in a week) -> 37, the answer Gerard asks for. The station is exactly those
-      // two clue props (in that order): a clock and a book.
-      // They sit on row 7, in FRONT of Gerard's house (whose footprint covers
-      // cols 3-6 of row 6); placing the clues on row 6 hid them behind the house.
-      // Walk near the clock to reveal its three named hands -> 3.
-      { type: "clockTall", x: 3, y: 7, label: "hour · minute · second" }, // the clock (= 3)
+      // --- Gerard's logic puzzle (left platform): the week clue ---
+      // The riddle multiplies an insect's legs (6) by the days in a week (7) -> 42,
+      // the answer Gerard asks for. The book is the in-world "week = 7" clue; the
+      // "insect = 6" clue lives in Gerard's dialogue.
+      // It sits on row 7, in FRONT of Gerard's house (whose footprint covers
+      // cols 3-6 of row 6); placing the clue on row 6 hid it behind the house.
       // Walk near the book to reveal its title; "a week" -> 7 days. There is no
       // book sprite in the asset set, so it's drawn as a small primitive (see
       // renderMap.js); `color` tints its cover.

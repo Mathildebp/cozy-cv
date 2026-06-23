@@ -11,7 +11,7 @@
 
 import { TILE_SIZE } from "../tilesets.js";
 import { buildMap, attachYSort } from "../renderMap.js";
-import { ISLANDS, ISLAND_BY_ID, START, composeWorld, worldTile, GAME_CHESTS, GUESTBOOK } from "../data/islands.js";
+import { ISLANDS, ISLAND_BY_ID, START, composeWorld, worldTile, GAME_CHESTS, ALL_BOOKS, GUESTBOOK } from "../data/islands.js";
 import { NPCS } from "../npcs.js";
 import { buildHouses } from "../houses.js";
 import { MINIGAMES } from "../minigames/index.js";
@@ -89,7 +89,7 @@ export function registerWorld(k) {
     // Props carrying a `label` (e.g. the puzzle clues) reveal their text as a
     // small plate above them when the player stands close, fading in with range.
     // Only the single closest labeled prop shows its plate, so adjacent clues
-    // (the clock and the book) never overlap their text.
+    // never overlap their text.
     const labeled = k.get("labeled");
     for (const prop of labeled) {
       prop.onDraw(() => {
@@ -386,7 +386,11 @@ export function registerWorld(k) {
         obj.read = true;
         runtime.readBooks.add(obj.book.id);
         playBook();
-        readBook(k, obj.book).then(() => { interactLock = 0.35; });
+        const justFinished = !hasBrick("tomeraider") && ALL_BOOKS.every((b) => runtime.readBooks.has(b.id));
+        readBook(k, obj.book).then(() => {
+          interactLock = 0.35;
+          if (justFinished) toast(k, player.pos.clone(), "Every book read — go tell Tome Raider.", 3.2);
+        });
         return;
       }
 
