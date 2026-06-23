@@ -32,11 +32,11 @@ export const HOUSES = [
   // Footprints sit entirely on grass - never on the dirt paths/clearings - and
   // extend NORTH from the door, so the only path tile they touch is the door's
   // own southern doorstep. Validated off every path, prop, sign and NPC.
-  { npc: "kindor",     door: [13, 3], W: 5, D: 3, doorOpen: false },
+  { npc: "kindor",     door: [13, 4], W: 5, D: 4, doorOpen: false },
   { npc: "tomeraider", door: [9, 3],  W: 5, D: 4, doorOpen: true },
-  { npc: "xprience",   door: [8, 11], W: 5, D: 3, doorOpen: false },
-  { npc: "empathus",   door: [14, 6], W: 5, D: 4, doorOpen: true },
-  { npc: "gerard",     door: [5, 6],  W: 5, D: 3, doorOpen: false },
+  { npc: "xprience",   door: [12, 7], W: 5, D: 4, doorOpen: false },
+  { npc: "empathus",   door: [14, 5], W: 5, D: 4, doorOpen: true },
+  { npc: "gerard",     door: [5, 6],  W: 5, D: 4, doorOpen: false },
   { npc: "melodyssee", door: [10, 4], W: 5, D: 4, doorOpen: true },
 ];
 
@@ -44,10 +44,11 @@ export const HOUSES = [
 // interior tile grid (ix: 0 = left .. W-1 = right; iy: 0 = back-wall row ..
 // D-1 = front/door row). This is what makes every home read differently inside.
 const INTERIORS = {
-  kindor: [ // a warm host's wide living room (W5 D3; door at ix2 of the front row)
+  kindor: [ // a warm host's wide living room (W5 D4; door at ix2 of the front row)
     { s: "bedPinkMade", ix: 0, iy: 0 }, { s: "clock", ix: 2, iy: 0 }, { s: "dresser", ix: 4, iy: 0 },
     { s: "chairLeft", ix: 0, iy: 1 }, { s: "table", ix: 1, iy: 1 }, { s: "chairRight", ix: 2, iy: 1 }, { s: "stool", ix: 4, iy: 1 },
     { s: "rugGreen", ix: 1, iy: 2 }, { s: "plantTall", ix: 4, iy: 2 },
+    { s: "plantSmall", ix: 0, iy: 3 }, { s: "stool", ix: 4, iy: 3 },
   ],
   tomeraider: [ // a reader's nook, a wall of books (W5 D4; door at ix2)
     { s: "dresser", ix: 0, iy: 0 }, { s: "dresser", ix: 1, iy: 0 },
@@ -55,10 +56,11 @@ const INTERIORS = {
     { s: "rugWideBlue", ix: 1, iy: 1 }, { s: "chairRight", ix: 3, iy: 1 },
     { s: "stool", ix: 1, iy: 2 }, { s: "plantTall", ix: 4, iy: 2 },
   ],
-  xprience: [ // an explorer's bunk (W5 D3; door at ix2 of the front row)
-    { s: "bedGreenMade", ix: 0, iy: 0 }, { s: "clock", ix: 2, iy: 0 }, { s: "plantSmall", ix: 4, iy: 0 },
+  xprience: [ // an explorer's bunk (W5 D4; door at ix2 of the front row)
+    { s: "bedGreenMade", ix: 0, iy: 0 }, { s: "clock", ix: 2, iy: 0 }, { s: "plantTall", ix: 4, iy: 0 },
     { s: "rugGreen", ix: 2, iy: 1 }, { s: "stool", ix: 3, iy: 1 },
-    { s: "plantTall", ix: 0, iy: 2 }, { s: "plantSmall", ix: 4, iy: 2 },
+    { s: "dresser", ix: 0, iy: 2 }, { s: "plantSmall", ix: 4, iy: 2 },
+    { s: "stool", ix: 0, iy: 3 }, { s: "plantSmall", ix: 4, iy: 3 },
   ],
   empathus: [ // a gardener's wide home, table set for guests (W5 D4; door at ix2)
     { s: "dresser", ix: 0, iy: 0 }, { s: "painting", ix: 2, iy: 0 }, { s: "plantSmall", ix: 4, iy: 0 },
@@ -66,10 +68,11 @@ const INTERIORS = {
     { s: "bedGreenMade", ix: 0, iy: 2 }, { s: "rugPink", ix: 2, iy: 2 }, { s: "plantFlower", ix: 4, iy: 2 },
     { s: "plantTall", ix: 1, iy: 3 }, { s: "plantTall", ix: 3, iy: 3 },
   ],
-  gerard: [ // a debugger's wide workshop (W5 D3; door at ix2)
+  gerard: [ // a debugger's wide workshop (W5 D4; door at ix2)
     { s: "dresser", ix: 0, iy: 0 }, { s: "clockTall", ix: 2, iy: 0 }, { s: "painting", ix: 4, iy: 0 },
     { s: "rugBlue", ix: 1, iy: 1 }, { s: "stool", ix: 3, iy: 1 },
     { s: "plantTall", ix: 0, iy: 2 }, { s: "stool", ix: 1, iy: 2 }, { s: "plantSmall", ix: 4, iy: 2 },
+    { s: "stool", ix: 0, iy: 3 }, { s: "plantSmall", ix: 4, iy: 3 },
   ],
   melodyssee: [ // a musician's wide studio, posters on the wall (W5 D4; door at ix2)
     { s: "paintingNight", ix: 0, iy: 0 }, { s: "painting", ix: 1, iy: 0 }, { s: "paintingWide", ix: 3, iy: 0 },

@@ -1,6 +1,9 @@
 {
 	"name": "cozy-cv",
 	"type": "module",
+	"engines": {
+		"node": "22.x"
+	},
 	"scripts": {
 		"build": "vite build",
 		"dev": "vite",

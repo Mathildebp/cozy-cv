@@ -16,7 +16,7 @@ export const MINIGAMES = {
       "Oh — a new face! Welcome to the islands.",
       "I'm Ganymede. I help folks find their way around here.",
       "Every islander keeps a Memory Brick. Chat with them, lend a hand,",
-      "and they'll share one with you. Seven in all.",
+      "and they'll share one with you. Six in all.",
     ], { speaker: npc.name, color: npc.color });
 
     const pick = await choose(k, "Need a hand getting started?", [

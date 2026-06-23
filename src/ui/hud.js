@@ -1,5 +1,6 @@
-// Brick inventory HUD: a fixed row of seven slots in the top-left. Earned bricks
-// show their coloured icon with a soft glow; unearned ones are dim placeholders.
+// Brick inventory HUD: a fixed row of slots in the top-left, one per brick.
+// Earned bricks show their coloured icon with a soft glow; unearned ones are dim
+// placeholders.
 // Reads live from state, so it reflects a brick the moment it is earned.
 
 import { BRICKS, hasBrick, state } from "../state.js";

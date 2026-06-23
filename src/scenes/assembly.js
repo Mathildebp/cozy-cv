@@ -1,4 +1,4 @@
-// Final assembly. In an abstract neutral space the seven earned bricks drift to
+// Final assembly. In an abstract neutral space the earned bricks drift to
 // the centre and settle into a slowly turning ring. Then the reflective closing
 // lines play.
 
@@ -28,7 +28,7 @@ export function registerAssembly(k) {
         k.drawRect({ width: k.width(), height: k.height(), color: k.rgb(28, 24, 38), opacity: bgFade });
         k.drawCircle({ pos: k.vec2(cx, cy), radius: 140, color: k.rgb(80, 70, 120), opacity: 0.25 * bgFade });
 
-        // The seven bricks: fly in, then orbit as a turning ring/crown.
+        // The bricks: fly in, then orbit as a turning ring/crown.
         const spin = Math.max(0, t - 3) * 0.5;
         BRICKS.forEach((b, i) => {
           const ang = (i / BRICKS.length) * Math.PI * 2 - Math.PI / 2 + spin;

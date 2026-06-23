@@ -13,6 +13,7 @@ let ctx = null;
 let master = null; // overall volume
 let musicGain = null; // ambient bed, ducked under dialogue / muted under YT clips
 let voiceGain = null; // dialogue blips
+let sfxGain = null; // world sound effects (footsteps, pickups, chest/book, chime)
 let musicStarted = false;
 let musicTimer = null;
 
@@ -36,6 +37,10 @@ function ensureCtx() {
   voiceGain = ctx.createGain();
   voiceGain.gain.value = 0.8;
   voiceGain.connect(master);
+
+  sfxGain = ctx.createGain();
+  sfxGain.gain.value = 1.9; // sit clearly above the ambient bed
+  sfxGain.connect(master);
 
   return ctx;
 }
@@ -289,4 +294,122 @@ export function speakBlip(speaker = "", ch = "a") {
 
   src.start(now);
   src.stop(now + 0.14);
+}
+
+// ----------------------------------------------------------------------------
+// World sound effects (footsteps, pickups, chest/book, brick chime)
+// ----------------------------------------------------------------------------
+//
+// All synthesised on the fly through sfxGain so they respect the master mute and
+// never need an audio file. Each entry point self-initialises the context, since
+// the player triggers them with the same gestures (walking / pressing E) that are
+// valid to unlock audio.
+
+// True only when sound can actually be produced right now. Centralises the
+// gesture/mute guard every SFX shares.
+function sfxReady() {
+  ensureCtx();
+  if (ctx.state === "suspended") ctx.resume();
+  return !muted;
+}
+
+// A short burst of white noise (used for soft, un-pitched textures like a foot on
+// grass or a page turning).
+function noiseBuffer(dur) {
+  const buf = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * dur)), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+// One short pitched blip with a snappy attack and soft decay, optionally gliding
+// in pitch. The building block for the melodic cues below.
+function blip({ freq, type = "sine", at, dur, peak = 0.18, glideTo }) {
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, at);
+  if (glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, at + dur);
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0.0001, at);
+  env.gain.exponentialRampToValueAtTime(peak, at + 0.012);
+  env.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  osc.connect(env);
+  env.connect(sfxGain);
+  osc.start(at);
+  osc.stop(at + dur + 0.02);
+}
+
+// A soft footfall on grass: a low-passed noise tap with a tiny pitch wobble so
+// consecutive steps don't sound mechanically identical. Kept quiet on purpose -
+// it should sit under the music, not punctuate it.
+export function playStep() {
+  if (!sfxReady()) return;
+  const now = ctx.currentTime;
+  const dur = 0.09;
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuffer(dur);
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 1300 + Math.random() * 400;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0.0001, now);
+  env.gain.exponentialRampToValueAtTime(0.17, now + 0.005);
+  env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  src.connect(lp);
+  lp.connect(env);
+  env.connect(sfxGain);
+  src.start(now);
+  src.stop(now + dur);
+}
+
+// Picking something up: a bright two-note rise, like a cheerful "got it".
+export function playPickup() {
+  if (!sfxReady()) return;
+  const t = ctx.currentTime;
+  blip({ freq: 659.25, type: "sine", at: t, dur: 0.10, peak: 0.30 });
+  blip({ freq: 987.77, type: "sine", at: t + 0.07, dur: 0.12, peak: 0.30 });
+}
+
+// Opening a chest: a wooden thunk as the lid lifts, then a small sparkle reveal.
+export function playChest() {
+  if (!sfxReady()) return;
+  const t = ctx.currentTime;
+  blip({ freq: 200, type: "triangle", at: t, dur: 0.16, peak: 0.34, glideTo: 120 });
+  blip({ freq: 783.99, type: "sine", at: t + 0.10, dur: 0.20, peak: 0.22 });
+  blip({ freq: 1174.66, type: "sine", at: t + 0.18, dur: 0.20, peak: 0.18 });
+}
+
+// Opening a book: a short, soft page-turn - band-passed noise swept upward.
+export function playBook() {
+  if (!sfxReady()) return;
+  const t = ctx.currentTime;
+  const dur = 0.18;
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuffer(dur);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 0.8;
+  bp.frequency.setValueAtTime(900, t);
+  bp.frequency.exponentialRampToValueAtTime(2600, t + dur);
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(0.20, t + 0.02);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp);
+  bp.connect(env);
+  env.connect(sfxGain);
+  src.start(t);
+  src.stop(t + dur);
+}
+
+// Earning a Memory Brick: a warm rising major arpeggio (C–E–G–C) with a quiet
+// octave shimmer, to underscore the celebration flourish.
+export function playBrickEarned() {
+  if (!sfxReady()) return;
+  const t = ctx.currentTime;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    const at = t + i * 0.11;
+    blip({ freq: f, type: "triangle", at, dur: 0.5, peak: 0.26 });
+    blip({ freq: f * 2, type: "sine", at, dur: 0.4, peak: 0.09 });
+  });
 }

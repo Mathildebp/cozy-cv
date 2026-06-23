@@ -22,6 +22,7 @@ import { earnBrick, hasBrick, brickFor, allBricksEarned } from "../state.js";
 import { runtime } from "../runtime.js";
 import { track } from "../analytics.js";
 import { openGuestbook } from "../ui/guestbook.js";
+import { playStep, playPickup, playChest, playBook, playBrickEarned } from "../audio/sound.js";
 
 const IDLE_FRAME = { down: 0, up: 4, left: 8, right: 12 };
 const SPEED = 80;
@@ -254,6 +255,7 @@ export function registerWorld(k) {
     let fidgeting = false;
     let idleTimer = k.rand(2, 5);
     let interactLock = 0;
+    let stepTimer = 0; // counts down to the next footstep blip while walking
 
     k.onUpdate(() => {
       k.setCamPos(player.pos);
@@ -320,7 +322,11 @@ export function registerWorld(k) {
       }
 
       const next = Math.abs(dir.x) > Math.abs(dir.y) ? (dir.x < 0 ? "left" : "right") : dir.y < 0 ? "up" : "down";
-      if (!walking || next !== facing) { walking = true; fidgeting = false; facing = next; player.play("walk-" + facing); }
+      if (!walking || next !== facing) { walking = true; fidgeting = false; facing = next; player.play("walk-" + facing); stepTimer = 0; }
+
+      // Footsteps, paced to the walk cycle (a soft tap every ~0.3s of walking).
+      stepTimer -= k.dt();
+      if (stepTimer <= 0) { playStep(); stepTimer = 0.3; }
     });
 
     // --- Interact button ---
@@ -354,6 +360,7 @@ export function registerWorld(k) {
       if (best.kind === "item") {
         const it = best.obj.item;
         runtime.pickedItems.add(it.id);
+        playPickup();
         toast(k, best.obj.pos.clone(), "Picked up the " + it.name);
         k.destroy(best.obj);
         return;
@@ -365,10 +372,11 @@ export function registerWorld(k) {
         obj.opened = true;
         obj.use(k.sprite("chestOpen"));
         runtime.openedChests.add(ch.id);
+        playChest();
         if (ch.game) {
           revealGameChest(k, ch).then(() => { interactLock = 0.35; });
         } else {
-          toast(k, obj.pos.clone(), ch.junk);
+          toast(k, obj.pos.clone(), ch.junk, 3.2);
         }
         return;
       }
@@ -377,6 +385,7 @@ export function registerWorld(k) {
         const obj = best.obj;
         obj.read = true;
         runtime.readBooks.add(obj.book.id);
+        playBook();
         readBook(k, obj.book).then(() => { interactLock = 0.35; });
         return;
       }
@@ -580,13 +589,13 @@ function drawNpcCta(k, color, name) {
 }
 
 // A small world-space label that rises and fades (item pickups).
-function toast(k, pos, text) {
-  let life = 1.3;
+function toast(k, pos, text, life = 1.3) {
+  const total = life;
   const start = pos.clone();
   k.add([k.layer("objects"), k.z(9000), {
     update() { life -= k.dt(); if (life <= 0) k.destroy(this); },
     draw() {
-      const rise = (1.3 - life) * 16;
+      const rise = (total - life) * 16;
       k.drawText({ text, font: "sprout", size: 8, pos: k.vec2(start.x, start.y - 18 - rise), anchor: "center", color: k.rgb(255, 255, 255), opacity: Math.min(1, life * 1.5) });
     },
   }]);
@@ -597,6 +606,7 @@ function toast(k, pos, text) {
 function celebrate(k, brick) {
   return new Promise((resolve) => {
     dialogue.active = true;
+    playBrickEarned();
     let life = 0;
     const TOTAL = 1.8;
     const node = k.add([k.fixed(), k.layer("ui"), k.z(150), {
