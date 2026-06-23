@@ -144,28 +144,29 @@ export const MINIGAMES = {
     return true;
   },
 
-  // DEBUG GERARD - Understanding. Order-of-clues logic puzzle: clock = 3 (its hands:
-  // hour/minute/second), book = 7 (days in a week). Read left-to-right -> 37.
-  // No fail state: wrong guesses just get a hint.
+  // DEBUG GERARD - Understanding. Escape-game logic lock: insect legs = 6, days in a
+  // week = 7. Read left-to-right and multiply -> 42 (101010 in binary; the answer to
+  // life, the universe and everything). No fail state: wrong guesses just get a hint.
   async gerard(k, npc) {
     await say(k, [
-      "A visitor. Good. This lock needs a mind, not a key.",
-      "Two clues stand before you, left to right:",
-      "  A clock sweeps its face: hour, minute, second.",
-      "  A book of days spans one full week.",
-      "Read them in order. What number opens the chest?",
+      "A visitor. Good - this lock needs a mind, not a key.",
+      "Two clues, left to right:",
+      "  A bug skitters past - count an insect's legs.",
+      "  A week turns once, day by day.",
+      "Multiply them in order. What number opens the lock?",
     ], { speaker: npc.name, color: npc.color });
 
     for (;;) {
-      const pick = await choose(k, "The chest expects...", ["10", "37", "73", "21"]);
+      const pick = await choose(k, "The lock expects...", ["24", "42", "13", "67"]);
       if (pick === 1) break;
-      await say(k, ["Not quite.", "Count the clock's hands, then the days in the week."], { speaker: npc.name, color: npc.color });
+      await say(k, ["Not quite.", "An insect has six legs; a week has seven days. Multiply."], { speaker: npc.name, color: npc.color });
     }
 
     await say(k, [
-      "...thirty-seven. The chest clicks open.",
-      "You saw how the pieces fit. That's understanding.",
-      "Take the brick. You read the world correctly.",
+      "...forty-two. The lock clicks open.",
+      "101010, in my tongue - the answer to life, the universe,",
+      "and one stubborn bug. That's understanding.",
+      "Take the brick. You debugged the world.",
     ], { speaker: npc.name, color: npc.color });
     return true;
   },
