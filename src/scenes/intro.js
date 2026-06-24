@@ -42,7 +42,7 @@ export function registerIntro(k) {
     gany.onUpdate(() => {
       if (!arrived) {
         gany.pos.y = groundY();
-        gany.pos.x += 240 * k.dt();
+        gany.pos.x += 420 * k.dt();
         if (gany.pos.x >= ganyX()) { gany.pos.x = ganyX(); arrived = true; gany.play("idle-down"); hopT = 0; }
         return;
       }
