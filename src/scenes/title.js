@@ -45,7 +45,7 @@ export function registerTitle(k) {
     btn.onHoverEnd(() => (btn.frame = 2));
 
     const controlsHint = k.isTouchscreen()
-      ? "Drag the left side to move    ·    Tap A to talk"
+      ? "Drag the left side to move    ·    Tap the button to talk"
       : "Arrows / WASD to move    ·    Space or E to talk";
     k.add([
       k.text(controlsHint, { font: "sprout", size: 14, align: "center" }),

@@ -86,6 +86,17 @@ export function addTouchControls(k, onInteract) {
 
     const c = btnCenter();
     k.drawCircle({ pos: c, radius: BTN_RADIUS, color: k.rgb(...PARCHMENT), opacity: 0.9, outline: { color: k.rgb(...BORDER), width: 4 } });
-    k.drawText({ text: "A", font: "sprout", size: 30, pos: c, anchor: "center", color: k.rgb(...INK) });
+    drawSpeechBubble(k, c);
   });
+}
+
+// A small "talk" icon for the action button: a rounded speech bubble with a
+// little tail and three dots, reading as "interact / chat" at a glance.
+function drawSpeechBubble(k, c) {
+  const ink = k.rgb(...INK);
+  k.drawRect({ pos: c.add(k.vec2(-19, -16)), width: 38, height: 27, radius: 9, color: ink });
+  k.drawPolygon({ pts: [c.add(k.vec2(-7, 9)), c.add(k.vec2(-13, 20)), c.add(k.vec2(3, 10))], color: ink });
+  for (const dx of [-9, 0, 9]) {
+    k.drawCircle({ pos: c.add(k.vec2(dx, -3)), radius: 2.6, color: k.rgb(...PARCHMENT) });
+  }
 }
