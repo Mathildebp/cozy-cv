@@ -255,6 +255,10 @@ export function registerWorld(k) {
     let currentIsland = startIsl?.id ?? null;
     if (startIsl) { showBanner(k, startIsl.name); track("island_entered", { island: startIsl.id, name: startIsl.name }); }
 
+    // One-time arrival hint. The world drops the player straight into free roam,
+    // so spell out the goal and how to interact instead of leaving them guessing.
+    showIntroHint(k, isTouch);
+
     // --- Movement ---
     let facing = START.face ?? "down";
     let walking = false;
@@ -262,10 +266,20 @@ export function registerWorld(k) {
     let idleTimer = k.rand(2, 5);
     let interactLock = 0;
     let stepTimer = 0; // counts down to the next footstep blip while walking
+    // After an interaction, the player must step out of reach before the same
+    // target can fire again — see canTouchInteract() / interact() below.
+    let justInteracted = null;
 
     k.onUpdate(() => {
       k.setCamPos(player.pos);
       if (interactLock > 0) interactLock -= k.dt();
+
+      // Re-arm the just-interacted target once the player walks out of reach (or
+      // it disappears), so they can talk to / use it again on a fresh approach.
+      if (justInteracted) {
+        const gone = justInteracted.exists && !justInteracted.exists();
+        if (gone || player.pos.dist(justInteracted.pos) > INTERACT_DIST) justInteracted = null;
+      }
 
       // Highlight the nearest NPC in reach with an interact prompt.
       ctaNpc = null;
@@ -337,9 +351,9 @@ export function registerWorld(k) {
     });
 
     // --- Interact button ---
-    const interact = () => {
-      if (dialogue.active || interactLock > 0) return;
-
+    // The nearest thing the player can act on right now (or null). Shared by the
+    // keyboard/touch interact() and the touch-button visibility gate.
+    const findInteractable = () => {
       let best = null, bestD = INTERACT_DIST;
       for (const obj of items) {
         if (!obj.exists()) continue;
@@ -362,7 +376,22 @@ export function registerWorld(k) {
       }
       const dMail = player.pos.dist(mailbox.pos);
       if (dMail < bestD) { best = { kind: "guestbook", obj: mailbox }; bestD = dMail; }
-      if (!best) return;
+      return best;
+    };
+
+    // Whether the touch action button should show / respond this frame.
+    const canTouchInteract = () => {
+      if (dialogue.active || interactLock > 0) return false;
+      const best = findInteractable();
+      return !!best && best.obj !== justInteracted;
+    };
+
+    const interact = () => {
+      if (dialogue.active || interactLock > 0) return;
+
+      const best = findInteractable();
+      if (!best || best.obj === justInteracted) return;
+      justInteracted = best.obj;
       // Lock straight away. The interaction paths below open dialogue
       // asynchronously, so dialogue.active doesn't flip this same frame — without
       // this, a quick double-tap (common on touch) would start two overlapping
@@ -428,7 +457,7 @@ export function registerWorld(k) {
     };
     k.onKeyPress("space", interact);
     k.onKeyPress("e", interact);
-    addTouchControls(k, interact);
+    addTouchControls(k, interact, canTouchInteract);
 
     k.setCamScale(2.5);
   });
@@ -580,6 +609,35 @@ function fadeTo(k, cb) {
     a += k.dt() * 2.2;
     if (a >= 1) { tick.cancel(); k.destroy(cover); dialogue.active = false; cb(); }
   });
+}
+
+// A one-time arrival hint, fixed near the top below the island banner: states
+// the goal (meet the islanders) and how to interact, then fades. The verb is
+// touch-aware so it never tells a phone player to "press Space".
+function showIntroHint(k, isTouch) {
+  const verb = isTouch ? "tap the button" : "press Space";
+  const lines = [
+    "Meet the islanders to get to know me.",
+    "Walk up to one — follow the glow — and " + verb + " to chat.",
+  ];
+  const size = 12;
+  let life = 0;
+  const TOTAL = 9;
+  k.add([k.fixed(), k.layer("ui"), k.z(96), {
+    update() { life += k.dt(); if (life >= TOTAL) k.destroy(this); },
+    draw() {
+      const alpha = Math.min(1, life * 1.5, (TOTAL - life) * 1.5);
+      const cx = k.width() / 2, cy = 100;
+      let widest = 0;
+      for (const ln of lines) widest = Math.max(widest, k.formatText({ text: ln, font: "sprout", size }).width);
+      const lineH = size + 6;
+      const h = lines.length * lineH + 8;
+      k.drawRect({ pos: k.vec2(cx, cy), width: widest + 28, height: h, radius: 8, anchor: "center", color: k.rgb(40, 30, 22), opacity: 0.6 * alpha });
+      lines.forEach((ln, i) => {
+        k.drawText({ text: ln, font: "sprout", size, pos: k.vec2(cx, cy - h / 2 + 10 + i * lineH), anchor: "center", color: k.rgb(255, 255, 255), opacity: alpha });
+      });
+    },
+  }]);
 }
 
 function showBanner(k, name) {

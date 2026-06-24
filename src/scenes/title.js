@@ -28,10 +28,20 @@ export function registerTitle(k) {
       k.color(74, 53, 38), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
       { update() { this.pos = k.vec2(cx(), k.height() * 0.3); } },
     ]);
+    const tagline = "a little world to get to know me, one chat at a time";
+    const taglineY = () => k.height() * 0.3 + 42;
+    // Soft cream plate behind the tagline so the text reads clearly over the
+    // muddy cream/teal blend of the upper backdrop.
+    k.add([k.fixed(), k.layer("ui"), k.z(0.5), {
+      draw() {
+        const m = k.formatText({ text: tagline, font: "sprout", size: 18 });
+        k.drawRect({ pos: k.vec2(cx(), taglineY()), width: m.width + 28, height: 30, radius: 10, anchor: "center", color: k.rgb(250, 241, 220), opacity: 0.7 });
+      },
+    }]);
     k.add([
-      k.text("a playable CV, one small interaction at a time", { font: "sprout", size: 16, align: "center" }),
-      k.color(110, 84, 60), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
-      { update() { this.pos = k.vec2(cx(), k.height() * 0.3 + 40); } },
+      k.text(tagline, { font: "sprout", size: 18, align: "center" }),
+      k.color(74, 53, 38), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
+      { update() { this.pos = k.vec2(cx(), taglineY()); } },
     ]);
     k.add([
       k.text("by Mathilde Belda", { font: "sprout", size: 12, align: "center" }),

@@ -4,6 +4,8 @@
 //     base, drag to steer. Its vector feeds `touchControls.moveDir`, which the
 //     world scene adds to the keyboard movement axis.
 //   - an action button bottom-right that fires the same interact() as Space/E.
+//     It only appears (and only responds to taps) when something is actually in
+//     reach, via the `canInteract` predicate the world scene passes in.
 //
 // Nothing renders or registers on non-touch devices, so desktop is untouched.
 // Both are hidden while a dialogue is open (taps advance the dialogue instead).
@@ -24,7 +26,7 @@ const DEADZONE = 0.22; // ignore tiny pushes so resting a thumb doesn't drift
 const BTN_RADIUS = 40;
 const BTN_MARGIN = 30;
 
-export function addTouchControls(k, onInteract) {
+export function addTouchControls(k, onInteract, canInteract = () => true) {
   touchControls.moveDir.x = 0;
   touchControls.moveDir.y = 0;
   if (!k.isTouchscreen()) return; // desktop: keyboard + mouse only
@@ -44,8 +46,9 @@ export function addTouchControls(k, onInteract) {
 
   k.onTouchStart((pos, t) => {
     if (dialogue.active) return; // let the tap fall through to dialogue advance
-    // Action button wins if the touch lands on it.
-    if (pos.dist(btnCenter()) <= BTN_RADIUS + 8) { onInteract(); return; }
+    // Action button wins if the touch lands on it — but only when it's actually
+    // showing (something in reach). Otherwise the tap is free to drive movement.
+    if (canInteract() && pos.dist(btnCenter()) <= BTN_RADIUS + 8) { onInteract(); return; }
     // Otherwise a touch on the left half grabs (or re-grabs) the joystick.
     if (joyId === null && pos.x < k.width() * 0.5) {
       joyId = t.identifier;
@@ -84,9 +87,12 @@ export function addTouchControls(k, onInteract) {
     k.drawCircle({ pos: b, radius: JOY_RADIUS, color: k.rgb(40, 30, 22), opacity: active ? 0.32 : 0.18 });
     k.drawCircle({ pos: kn, radius: KNOB_RADIUS, color: k.rgb(...PARCHMENT), opacity: active ? 0.9 : 0.5, outline: { color: k.rgb(...BORDER), width: 3 } });
 
-    const c = btnCenter();
-    k.drawCircle({ pos: c, radius: BTN_RADIUS, color: k.rgb(...PARCHMENT), opacity: 0.9, outline: { color: k.rgb(...BORDER), width: 4 } });
-    drawSpeechBubble(k, c);
+    // The action button only shows when there's something in reach to act on.
+    if (canInteract()) {
+      const c = btnCenter();
+      k.drawCircle({ pos: c, radius: BTN_RADIUS, color: k.rgb(...PARCHMENT), opacity: 0.9, outline: { color: k.rgb(...BORDER), width: 4 } });
+      drawSpeechBubble(k, c);
+    }
   });
 }
 
