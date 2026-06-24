@@ -1,5 +1,6 @@
-// Title screen: name, tagline, a PLAY button (from the UI kit) and the controls.
-// Space / click / the button all start the world at the hub.
+// Title screen: the game name, the tagline, a PLAY button (from the UI kit) and
+// the controls. Space / click / the button start the post-PLAY intro, where
+// Ganymede greets the player and gives the brief before the world opens.
 
 import { resetProgress } from "../state.js";
 import { resetRuntime } from "../runtime.js";
@@ -73,7 +74,7 @@ export function registerTitle(k) {
       track("game_started");
       resetProgress();
       resetRuntime();
-      k.go("world");
+      k.go("intro");
     };
     btn.onClick(start);
     k.onKeyPress(["space", "enter"], start);

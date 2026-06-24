@@ -4,6 +4,7 @@
 import kaplay from "kaplay";
 import { loadAllAssets } from "./assets.js";
 import { registerTitle } from "./scenes/title.js";
+import { registerIntro } from "./scenes/intro.js";
 import { registerWorld } from "./scenes/world.js";
 import { registerAssembly } from "./scenes/assembly.js";
 import { initAnalytics } from "./analytics.js";
@@ -23,6 +24,7 @@ k.setLayers(["terrain", "objects", "ui"], "objects");
 loadAllAssets(k);
 
 registerTitle(k);
+registerIntro(k);
 registerWorld(k);
 registerAssembly(k);
 
