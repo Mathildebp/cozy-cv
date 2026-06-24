@@ -389,7 +389,17 @@ export function registerWorld(k) {
         const justFinished = !hasBrick("tomeraider") && ALL_BOOKS.every((b) => runtime.readBooks.has(b.id));
         readBook(k, obj.book).then(() => {
           interactLock = 0.35;
-          if (justFinished) toast(k, player.pos.clone(), "Every book read — go tell Tome Raider.", 3.2);
+          if (!justFinished) return;
+          // Already met Tome Raider? Hand the brick over now — don't make the
+          // player walk all the way back. Otherwise nudge them toward him.
+          if (runtime.metNpcs.has("tomeraider")) {
+            earnBrick("tomeraider");
+            celebrate(k, brickFor("tomeraider")).then(() => {
+              if (allBricksEarned()) fadeTo(k, () => k.go("assembly"));
+            });
+          } else {
+            toast(k, player.pos.clone(), "Every book read — go tell Tome Raider.", 3.2);
+          }
         });
         return;
       }
@@ -526,6 +536,7 @@ function drawBook(k, color, open) {
 async function runInteraction(k, def) {
   try {
     track("npc_talked", { npc: def.id, name: def.name, already_earned: hasBrick(def.id) });
+    runtime.metNpcs.add(def.id);
     if (hasBrick(def.id)) {
       await say(k, def.doneLines, { speaker: def.name, color: def.color });
       return;
