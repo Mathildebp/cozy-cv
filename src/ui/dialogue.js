@@ -212,11 +212,28 @@ export function choose(k, prompt, options) {
       ]),
     );
 
+    // Full-width invisible hit targets behind each option so a tap (or click)
+    // selects that specific row — vital on touch, where there are no arrow keys.
+    const hits = options.map((opt, idx) =>
+      k.add([
+        k.rect(10, ROW_H, { radius: 6 }),
+        k.color(...BORDER),
+        k.opacity(0),
+        k.pos(0, 0),
+        k.area(),
+        k.fixed(),
+        k.layer("ui"),
+        k.z(99),
+        { idx },
+      ]),
+    );
+
     const refresh = () => {
       rows.forEach((r) => {
         r.text = (r.idx === sel ? "> " : "  ") + r.label;
         r.color = r.idx === sel ? k.rgb(...BORDER) : k.rgb(...INK);
       });
+      hits.forEach((h) => (h.opacity = h.idx === sel ? 0.14 : 0));
     };
     refresh();
 
@@ -225,6 +242,10 @@ export function choose(k, prompt, options) {
       promptText.width = layout.w - PAD * 2;
       const top = layout.y + PAD + ROWS_TOP;
       rows.forEach((r, n) => (r.pos = k.vec2(layout.x + PAD + 8, top + n * ROW_H)));
+      hits.forEach((h, n) => {
+        h.pos = k.vec2(layout.x + PAD, top + n * ROW_H - 3);
+        h.width = layout.w - PAD * 2;
+      });
     });
 
     const teardown = () => {
@@ -232,6 +253,7 @@ export function choose(k, prompt, options) {
       k.destroy(panel);
       k.destroy(promptText);
       rows.forEach((r) => k.destroy(r));
+      hits.forEach((h) => k.destroy(h));
       dialogue.active = false;
     };
     const finish = (idx) => {
@@ -239,11 +261,15 @@ export function choose(k, prompt, options) {
       resolve(idx);
     };
 
+    hits.forEach((h) => {
+      h.onHover(() => { sel = h.idx; refresh(); });
+      h.onClick(() => finish(h.idx));
+    });
+
     const handles = [
       k.onKeyPress(["down", "s"], () => { sel = (sel + 1) % options.length; refresh(); }),
       k.onKeyPress(["up", "w"], () => { sel = (sel - 1 + options.length) % options.length; refresh(); }),
       k.onKeyPress(["space", "enter"], () => finish(sel)),
-      k.onMousePress(() => finish(sel)),
       k.onKeyPress("escape", () => { teardown(); reject(CANCELLED); }),
     ];
   });

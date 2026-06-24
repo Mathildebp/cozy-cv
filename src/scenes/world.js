@@ -16,6 +16,7 @@ import { NPCS } from "../npcs.js";
 import { buildHouses } from "../houses.js";
 import { MINIGAMES } from "../minigames/index.js";
 import { addHud } from "../ui/hud.js";
+import { addTouchControls, touchControls } from "../ui/touchControls.js";
 import { drawBrick } from "../ui/brick.js";
 import { say, dialogue, CANCELLED } from "../ui/dialogue.js";
 import { earnBrick, hasBrick, brickFor, allBricksEarned } from "../state.js";
@@ -285,9 +286,10 @@ export function registerWorld(k) {
         return;
       }
 
+      const tdir = touchControls.moveDir;
       const dir = k.vec2(
-        (k.isKeyDown("right") ? 1 : 0) - (k.isKeyDown("left") ? 1 : 0),
-        (k.isKeyDown("down") ? 1 : 0) - (k.isKeyDown("up") ? 1 : 0),
+        (k.isKeyDown("right") ? 1 : 0) - (k.isKeyDown("left") ? 1 : 0) + tdir.x,
+        (k.isKeyDown("down") ? 1 : 0) - (k.isKeyDown("up") ? 1 : 0) + tdir.y,
       );
 
       if (dir.x === 0 && dir.y === 0) {
@@ -416,6 +418,7 @@ export function registerWorld(k) {
     };
     k.onKeyPress("space", interact);
     k.onKeyPress("e", interact);
+    addTouchControls(k, interact);
 
     k.setCamScale(2.5);
   });

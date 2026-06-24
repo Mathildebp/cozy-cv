@@ -44,8 +44,11 @@ export function registerTitle(k) {
     btn.onHover(() => (btn.frame = 3));
     btn.onHoverEnd(() => (btn.frame = 2));
 
+    const controlsHint = k.isTouchscreen()
+      ? "Drag the left side to move    ·    Tap A to talk"
+      : "Arrows / WASD to move    ·    Space or E to talk";
     k.add([
-      k.text("Arrows / WASD to move    ·    Space or E to talk", { font: "sprout", size: 14, align: "center" }),
+      k.text(controlsHint, { font: "sprout", size: 14, align: "center" }),
       k.color(110, 84, 60), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
       { update() { this.pos = k.vec2(cx(), k.height() * 0.78); } },
     ]);

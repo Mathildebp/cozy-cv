@@ -59,8 +59,10 @@ async function runEnding(k) {
     "Put together, that's a fair picture of who I am.",
   ]);
   await askFeedback(k);
-  await say(k, ["Thanks for stopping by.", "(press Space to return to the title)"]);
+  const cue = k.isTouchscreen() ? "(tap to return to the title)" : "(press Space to return to the title)";
+  await say(k, ["Thanks for stopping by.", cue]);
   k.onKeyPress(["space", "enter"], () => k.go("title"));
+  k.onMousePress(() => k.go("title")); // tap also returns, for touch devices
 }
 
 // A reflective, in-universe feedback beat: a quick rating asked through the
