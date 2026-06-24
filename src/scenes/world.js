@@ -358,6 +358,11 @@ export function registerWorld(k) {
       const dMail = player.pos.dist(mailbox.pos);
       if (dMail < bestD) { best = { kind: "guestbook", obj: mailbox }; bestD = dMail; }
       if (!best) return;
+      // Lock straight away. The interaction paths below open dialogue
+      // asynchronously, so dialogue.active doesn't flip this same frame — without
+      // this, a quick double-tap (common on touch) would start two overlapping
+      // conversations.
+      interactLock = 0.35;
 
       if (best.kind === "item") {
         const it = best.obj.item;
