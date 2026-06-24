@@ -56,17 +56,28 @@ function addPanel(k, onLayout, panelH = PANEL_H) {
     k.drawRect({ pos: k.vec2(x + 4, y + 4), width: pw - 8, height: panelH - 8, radius: 8, color: k.rgb(...PARCHMENT), outline: { color: k.rgb(...BORDER), width: 2 } });
     // Faint reminder, pinned bottom-left (the blinking continue cue owns the
     // bottom-right), that Escape leaves the conversation.
-    k.drawText({ text: "Esc: leave", font: "sprout", size: 11, pos: k.vec2(x + 12, y + panelH - 12), anchor: "botleft", color: k.rgb(...BORDER), opacity: 0.55 });
+    k.drawText({ text: k.isTouchscreen() ? "Tap away: leave" : "Esc: leave", font: "sprout", size: 11, pos: k.vec2(x + 12, y + panelH - 12), anchor: "botleft", color: k.rgb(...BORDER), opacity: 0.55 });
     onLayout?.({ x, y, w: pw, h: panelH });
   });
   return panel;
 }
 
-// Collect input handlers so we can detach them when the dialogue closes.
-function makeInput(k, onAdvance, onCancel) {
+// True when a tap/click lands outside the dialogue panel. Touch only: it lets
+// players dismiss a dialogue (the Escape they have no key for) by tapping the
+// world above the panel. Desktop keeps "click anywhere advances" untouched.
+function tappedOutside(k, layout) {
+  if (!k.isTouchscreen()) return false;
+  const m = k.mousePos();
+  return m.x < layout.x || m.x > layout.x + layout.w || m.y < layout.y || m.y > layout.y + layout.h;
+}
+
+// Collect input handlers so we can detach them when the dialogue closes. A tap
+// outside the panel cancels (mobile leave); anywhere else advances.
+function makeInput(k, onAdvance, onCancel, getLayout) {
+  const onPress = () => (tappedOutside(k, getLayout()) ? onCancel() : onAdvance());
   const handles = [
     k.onKeyPress(["space", "enter"], onAdvance),
-    k.onMousePress(onAdvance),
+    k.onMousePress(onPress),
     k.onKeyPress("escape", onCancel),
   ];
   return () => handles.forEach((h) => h.cancel());
@@ -190,6 +201,7 @@ export function say(k, lines, opts = {}) {
         teardown();
         reject(CANCELLED);
       },
+      () => layout,
     );
     activeCleanup = cleanup; // let the next dialogue tear this one's input down
   });
@@ -295,6 +307,8 @@ export function choose(k, prompt, options) {
       k.onKeyPress(["up", "w"], () => { sel = (sel - 1 + options.length) % options.length; refresh(); }),
       k.onKeyPress(["space", "enter"], () => finish(sel)),
       k.onKeyPress("escape", () => { teardown(); reject(CANCELLED); }),
+      // Mobile: a tap outside the panel leaves the menu (rows handle inside taps).
+      k.onMousePress(() => { if (tappedOutside(k, layout)) { teardown(); reject(CANCELLED); } }),
     ];
     activeCleanup = cancelInput; // let the next dialogue tear this one's input down
   });

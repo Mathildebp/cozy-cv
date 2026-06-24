@@ -4,10 +4,15 @@
 import { resetProgress } from "../state.js";
 import { resetRuntime } from "../runtime.js";
 import { startMusic } from "../audio/sound.js";
+import { armClipUnlock } from "../audio/youtube.js";
 import { track } from "../analytics.js";
 
 export function registerTitle(k) {
   k.scene("title", () => {
+    // Build the YouTube player now and prime it on the first tap, so Melodyssee's
+    // clips are audible on mobile (which blocks non-gesture media playback).
+    armClipUnlock();
+
     // Warm backdrop.
     k.add([k.fixed(), k.layer("ui"), k.z(0), {
       draw() {
