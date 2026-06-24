@@ -210,14 +210,20 @@ export function say(k, lines, opts = {}) {
 // A prompt line plus a vertical list of selectable options. Returns the chosen
 // index. Up/Down (or W/S) move the cursor, Space/Enter/click confirm.
 const ROW_H = 22;
-const ROWS_TOP = 26; // gap between prompt and first option
+const PROMPT_GAP = 14; // space between the prompt and the first option
 
 export function choose(k, prompt, options) {
   return new Promise((resolve, reject) => {
     clearDialogueUi(k); // never stack on top of a dialogue that's still up
     dialogue.active = true;
-    // Grow the panel to fit the prompt plus every option so nothing is clipped.
-    const panelH = Math.max(PANEL_H, PAD + ROWS_TOP + options.length * ROW_H + PAD);
+    // Measure the prompt at its real wrap width so the options always sit BELOW
+    // it, even when it spills onto several lines. A fixed gap was fine on wide
+    // desktop (the prompt stayed one line) but on a narrow phone the long music
+    // clues wrap to 2-3 lines and used to overlap the options.
+    const wrapW = Math.max(40, k.width() - MARGIN * 2 - PAD * 2);
+    const promptH = k.formatText({ text: prompt, font: "sprout", size: 18, width: wrapW }).height;
+    // Grow the panel to fit the (possibly multi-line) prompt plus every option.
+    const panelH = Math.max(PANEL_H, PAD + promptH + PROMPT_GAP + options.length * ROW_H + PAD);
     let layout = { x: MARGIN, y: 0, w: 200, h: panelH };
     const panel = addPanel(k, (l) => (layout = l), panelH);
 
@@ -274,7 +280,7 @@ export function choose(k, prompt, options) {
     promptText.onUpdate(() => {
       promptText.pos = k.vec2(layout.x + PAD, layout.y + PAD - 4);
       promptText.width = layout.w - PAD * 2;
-      const top = layout.y + PAD + ROWS_TOP;
+      const top = layout.y + PAD + promptH + PROMPT_GAP;
       rows.forEach((r, n) => (r.pos = k.vec2(layout.x + PAD + 8, top + n * ROW_H)));
       hits.forEach((h, n) => {
         h.pos = k.vec2(layout.x + PAD, top + n * ROW_H - 3);
