@@ -181,16 +181,6 @@ export function startMusic() {
   scheduleBar();
 }
 
-export function stopMusic() {
-  if (musicTimer) clearTimeout(musicTimer);
-  musicTimer = null;
-  musicStarted = false;
-  if (musicGain && ctx) {
-    musicGain.gain.cancelScheduledValues(ctx.currentTime);
-    musicGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
-  }
-}
-
 // Recompute the bed level from the two things that can lower it.
 function applyMusicLevel() {
   if (!ctx || !musicGain || !musicStarted) return;

@@ -58,6 +58,10 @@ export function registerWorld(k) {
   k_vec = (x, y) => k.vec2(x, y);
 
   k.scene("world", () => {
+    // On touch there is no keyboard, so in-world prompts must not say "press E"
+    // (interaction happens via the on-screen action button). Mirrors the
+    // touch-aware control hints on the title and ending screens.
+    const isTouch = k.isTouchscreen();
     const comp = composeWorld();
     const map = buildMap(k, { terrain: comp.terrain, objects: comp.objects, bridges: comp.bridges });
 
@@ -127,7 +131,7 @@ export function registerWorld(k) {
       map.addBlocker({ x: obj.pos.x - 5, y: obj.pos.y - 6, w: 10, h: 6 });
       attachNpcBehavior(k, obj, map);
       obj.onDraw(() => {
-        if (obj === ctaNpc) drawNpcCta(k, def.color, def.name);
+        if (obj === ctaNpc) drawNpcCta(k, def.color, def.name, isTouch);
         if (hasBrick(def.id)) return;
         const bob = Math.sin(k.time() * 3) * 2;
         k.drawCircle({ pos: k.vec2(0, -22 + bob), radius: 4, color: k.rgb(...def.color), opacity: 0.95, anchor: "center" });
@@ -234,13 +238,14 @@ export function registerWorld(k) {
     mailbox.onDraw(() => {
       drawMailbox(k);
       const near = player.pos.dist(mailbox.pos) <= LABEL_DIST;
-      const bob = Math.sin(k.time() * 3) * 1.5;
-      k.drawCircle({ pos: k.vec2(0, -30 + bob), radius: 3, color: k.rgb(255, 244, 200), opacity: near ? 1 : 0.7, anchor: "center" });
       if (near) {
-        const text = "Guestbook · E";
-        const measured = k.formatText({ text, font: "sprout", size: 8 });
-        k.drawRect({ pos: k.vec2(0, -40), width: measured.width + 8, height: 13, radius: 3, anchor: "center", color: k.rgb(40, 30, 22), opacity: 0.6 });
-        k.drawText({ text, font: "sprout", size: 8, pos: k.vec2(0, -40), anchor: "center", color: k.rgb(255, 255, 255) });
+        // When in reach, show the same name plate + key cap CTA used for NPCs,
+        // so "SPACE" sits in its own bubble rather than inline in the label.
+        drawNpcCta(k, [255, 210, 120], "Guestbook", isTouch);
+      } else {
+        // Out of reach: a soft inviting dot bobbing above the mailbox.
+        const bob = Math.sin(k.time() * 3) * 1.5;
+        k.drawCircle({ pos: k.vec2(0, -30 + bob), radius: 3, color: k.rgb(255, 244, 200), opacity: 0.7, anchor: "center" });
       }
     });
 
@@ -591,18 +596,31 @@ function showBanner(k, name) {
   }]);
 }
 
-// A floating "press E" prompt drawn above the nearest NPC in reach. Bobs and
+// A floating interact prompt drawn above the nearest NPC in reach. Bobs and
 // pulses gently in the NPC's accent colour. Drawn in the NPC's local space.
-// Shows the NPC's name on a plate above the key cap, like the guestbook mailbox.
-function drawNpcCta(k, color, name) {
+// Shows the NPC's name on a plate above the cap. On desktop the cap is a
+// space-bar reading "SPACE" (the key the player presses); on touch it shows a
+// little speech bubble, matching the on-screen action button.
+function drawNpcCta(k, color, name, isTouch) {
   const bob = Math.sin(k.time() * 4) * 1.5;
   const pulse = 0.75 + Math.sin(k.time() * 6) * 0.25;
   const y = -36 + bob;
-  // Soft glow + dark key cap with the accent border.
-  k.drawCircle({ pos: k.vec2(0, y), radius: 12, color: k.rgb(...color), opacity: 0.18 * pulse, anchor: "center" });
-  k.drawRect({ pos: k.vec2(0, y), width: 15, height: 15, radius: 4, anchor: "center", color: k.rgb(...color), opacity: 0.95 });
-  k.drawRect({ pos: k.vec2(0, y), width: 12, height: 12, radius: 3, anchor: "center", color: k.rgb(40, 30, 22), opacity: 0.92 });
-  k.drawText({ text: "E", font: "sprout", size: 8, pos: k.vec2(0, y), anchor: "center", color: k.rgb(255, 255, 255) });
+  if (isTouch) {
+    // Square key cap with a tiny speech bubble (rounded box + three dots)
+    // echoing the on-screen action button.
+    k.drawCircle({ pos: k.vec2(0, y), radius: 12, color: k.rgb(...color), opacity: 0.18 * pulse, anchor: "center" });
+    k.drawRect({ pos: k.vec2(0, y), width: 15, height: 15, radius: 4, anchor: "center", color: k.rgb(...color), opacity: 0.95 });
+    k.drawRect({ pos: k.vec2(0, y), width: 12, height: 12, radius: 3, anchor: "center", color: k.rgb(40, 30, 22), opacity: 0.92 });
+    k.drawRect({ pos: k.vec2(0, y - 1), width: 9, height: 6, radius: 2, anchor: "center", color: k.rgb(255, 255, 255) });
+    for (const dx of [-2, 0, 2]) k.drawCircle({ pos: k.vec2(dx, y - 1), radius: 0.7, color: k.rgb(40, 30, 22), anchor: "center" });
+  } else {
+    // A wide space-bar shaped cap with a "SPACE" label, matching the key the
+    // player actually presses to interact.
+    k.drawRect({ pos: k.vec2(0, y), width: 34, height: 15, radius: 4, anchor: "center", color: k.rgb(...color), opacity: 0.18 * pulse });
+    k.drawRect({ pos: k.vec2(0, y), width: 31, height: 13, radius: 4, anchor: "center", color: k.rgb(...color), opacity: 0.95 });
+    k.drawRect({ pos: k.vec2(0, y), width: 28, height: 10, radius: 3, anchor: "center", color: k.rgb(40, 30, 22), opacity: 0.92 });
+    k.drawText({ text: "SPACE", font: "sprout", size: 6, pos: k.vec2(0, y), anchor: "center", color: k.rgb(255, 255, 255) });
+  }
   if (name) {
     const ny = y - 14;
     const measured = k.formatText({ text: name, font: "sprout", size: 8 });

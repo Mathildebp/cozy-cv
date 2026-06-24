@@ -476,12 +476,12 @@ export function worldTile(islandId, [lx, ly]) {
 // in the composed grid; a single bridge sprite is drawn over the gap.
 //   orient "v": 1 tile wide, 3 tiles tall  (sprite bridgeVertical, 16x48)
 //   orient "h": 3 tiles wide, 1 tile tall  (sprite bridgeHorizontal, 48x16)
-// x/y are the top-left world tile of the deck. `label` names the destination.
+// x/y are the top-left world tile of the deck.
 export const BRIDGES = [
-  { orient: "v", x: 33, y: 19, label: "Imaginary Archipelago" }, // hub <-> island2
-  { orient: "v", x: 33, y: 38, label: "Human Trace Garden" },    // hub <-> island4
-  { orient: "h", x: 44, y: 29, label: "Adventure Camp" },        // hub <-> island3
-  { orient: "h", x: 21, y: 29, label: "Creation & System" },     // hub <-> island5
+  { orient: "v", x: 33, y: 19 }, // hub <-> island2 (Imaginary Archipelago)
+  { orient: "v", x: 33, y: 38 }, // hub <-> island4 (Human Trace Garden)
+  { orient: "h", x: 44, y: 29 }, // hub <-> island3 (Adventure Camp)
+  { orient: "h", x: 21, y: 29 }, // hub <-> island5 (Creation & System)
 ];
 
 // Deck tiles a bridge occupies, as [x, y] world tiles.
