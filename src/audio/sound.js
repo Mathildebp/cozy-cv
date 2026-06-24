@@ -197,10 +197,20 @@ export function duckMusic(on) {
   applyMusicLevel();
 }
 
-// Fully step the bed aside while Melodyssee streams a YouTube clip.
+// Pause the ambient bed entirely while Melodyssee streams a YouTube clip: drop
+// it to silence AND stop the bar scheduler so nothing keeps generating under the
+// clip, then pick the loop back up cleanly once the clip ends.
 export function muteMusicForClip(on) {
   mutedForClip = on;
   applyMusicLevel();
+  if (on) {
+    if (musicTimer) {
+      clearTimeout(musicTimer); // pause: stop queueing new bars
+      musicTimer = null;
+    }
+  } else if (musicStarted && !musicTimer) {
+    scheduleBar(); // resume: restart the loop where it left off
+  }
 }
 
 // ----------------------------------------------------------------------------
