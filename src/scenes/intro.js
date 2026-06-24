@@ -1,7 +1,7 @@
-// Post-PLAY intro: Ganymede walks in from the left, hops a little hello, and
-// gives the player the brief (what this little world is and what to do) one
-// speech-bubble line at a time. Space / click / tap advances each line; after
-// the last it enters the world. The walk-in can be skipped with the first press.
+// Post-PLAY intro: Ganymede is already standing centre-stage, waving hello with
+// his hand, and gives the player the brief (what this little world is and what
+// to do) one speech-bubble line at a time. Space / click / tap advances each
+// line; after the last it enters the world.
 
 export function registerIntro(k) {
   k.scene("intro", () => {
@@ -27,38 +27,41 @@ export function registerIntro(k) {
       "That's the brief! Off you go —",
     ];
 
+    // Ganymede, already in place, breathing (idle) where he stands.
     const gany = k.add([
       k.sprite("character"), k.color(...GANY), k.scale(2.6),
-      k.anchor("bot"), k.pos(-70, groundY()),
+      k.anchor("bot"), k.pos(ganyX(), groundY()),
       k.fixed(), k.layer("ui"), k.z(1),
     ]);
-    gany.play("walk-right");
+    gany.play("idle-down");
 
-    let arrived = false;
     let line = 0;
-    let hopT = 0;     // greeting-hop timer, re-armed on each new line
-    let bubbleA = 0;  // speech-bubble fade-in for the current line
-
+    let bubbleA = 0; // speech-bubble fade-in for the current line
     gany.onUpdate(() => {
-      if (!arrived) {
-        gany.pos.y = groundY();
-        gany.pos.x += 420 * k.dt();
-        if (gany.pos.x >= ganyX()) { gany.pos.x = ganyX(); arrived = true; gany.play("idle-down"); hopT = 0; }
-        return;
-      }
       gany.pos.x = ganyX();
-      hopT += k.dt();
-      // A couple of quick bounces as a "hello" each time a new line appears.
-      const hop = hopT < 0.9 ? -Math.abs(Math.sin(hopT * Math.PI * 2.6)) * 10 : 0;
-      gany.pos.y = groundY() + hop;
+      gany.pos.y = groundY();
       bubbleA = Math.min(1, bubbleA + k.dt() * 3);
     });
 
+    // Waving hand: a little arm + hand beside Ganymede that swings back and
+    // forth (the character sheet has no wave frame, so it's drawn as primitives).
+    // Drawn above the sprite (z 2) so it always reads as a raised, waving hand.
+    k.add([k.fixed(), k.layer("ui"), k.z(2), {
+      draw() {
+        const shoulder = k.vec2(ganyX() + 20, groundY() - 80);
+        const ang = -1.05 + Math.sin(k.time() * 7) * 0.42; // swing around an up-right rest pose
+        const hand = shoulder.add(k.vec2(Math.cos(ang), Math.sin(ang)).scale(22));
+        k.drawLine({ p1: shoulder, p2: hand, width: 5, color: k.rgb(...GANY) });
+        k.drawCircle({ pos: hand, radius: 5.5, color: k.rgb(...GANY) });
+        k.drawCircle({ pos: hand, radius: 5.5, outline: { color: k.rgb(150, 70, 52), width: 1 }, fill: false });
+      },
+    }]);
+
     // Speech bubble above Ganymede's head carrying the current brief line, with
-    // a small tail pointing down to him. Fades in once he has arrived.
+    // a small tail pointing down to him.
     k.add([k.fixed(), k.layer("ui"), k.z(1), {
       draw() {
-        if (!arrived || bubbleA <= 0) return;
+        if (bubbleA <= 0) return;
         const pad = 14;
         const text = brief[line];
         const m = k.formatText({ text, font: "sprout", size: 15, align: "center" });
@@ -86,9 +89,7 @@ export function registerIntro(k) {
     ]);
 
     const advance = () => {
-      // First press finishes the walk-in instead of skipping a line.
-      if (!arrived) { gany.pos.x = ganyX(); arrived = true; gany.play("idle-down"); hopT = 0; bubbleA = 0; return; }
-      if (line < brief.length - 1) { line += 1; hopT = 0; bubbleA = 0; }
+      if (line < brief.length - 1) { line += 1; bubbleA = 0; }
       else k.go("world");
     };
     k.onKeyPress(["space", "enter"], advance);
