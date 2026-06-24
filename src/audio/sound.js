@@ -339,27 +339,47 @@ function blip({ freq, type = "sine", at, dur, peak = 0.18, glideTo }) {
   osc.stop(at + dur + 0.02);
 }
 
-// A soft footfall on grass: a low-passed noise tap with a tiny pitch wobble so
-// consecutive steps don't sound mechanically identical. Kept quiet on purpose -
-// it should sit under the music, not punctuate it.
+// A soft footfall on grass, Animal-Crossing style: a warm little "tup" rather
+// than a dry noise tap. A short, low pitched body (a sine that drops quickly)
+// gives the rounded thump, and a whisper of heavily low-passed noise adds the
+// soft "earthy" texture on top. Pitch and timing wobble per step so a walk
+// cycle never sounds mechanical. Kept quiet on purpose - it sits under the bed.
 export function playStep() {
   if (!sfxReady()) return;
   const now = ctx.currentTime;
-  const dur = 0.09;
+  const dur = 0.11;
+
+  // Rounded body: a low sine thump with a quick downward glide -> a soft "tup".
+  const f0 = 175 + Math.random() * 50; // gentle per-step pitch wobble
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(f0, now);
+  osc.frequency.exponentialRampToValueAtTime(f0 * 0.55, now + dur);
+  const oscEnv = ctx.createGain();
+  oscEnv.gain.setValueAtTime(0.0001, now);
+  oscEnv.gain.exponentialRampToValueAtTime(0.16, now + 0.008);
+  oscEnv.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(oscEnv);
+  oscEnv.connect(sfxGain);
+  osc.start(now);
+  osc.stop(now + dur + 0.02);
+
+  // Soft earthy texture: a brief puff of very-low-passed noise under the thump.
+  const noiseDur = 0.05;
   const src = ctx.createBufferSource();
-  src.buffer = noiseBuffer(dur);
+  src.buffer = noiseBuffer(noiseDur);
   const lp = ctx.createBiquadFilter();
   lp.type = "lowpass";
-  lp.frequency.value = 1300 + Math.random() * 400;
-  const env = ctx.createGain();
-  env.gain.setValueAtTime(0.0001, now);
-  env.gain.exponentialRampToValueAtTime(0.17, now + 0.005);
-  env.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  lp.frequency.value = 500 + Math.random() * 200;
+  const nEnv = ctx.createGain();
+  nEnv.gain.setValueAtTime(0.0001, now);
+  nEnv.gain.exponentialRampToValueAtTime(0.06, now + 0.004);
+  nEnv.gain.exponentialRampToValueAtTime(0.0001, now + noiseDur);
   src.connect(lp);
-  lp.connect(env);
-  env.connect(sfxGain);
+  lp.connect(nEnv);
+  nEnv.connect(sfxGain);
   src.start(now);
-  src.stop(now + dur);
+  src.stop(now + noiseDur);
 }
 
 // Picking something up: a bright two-note rise, like a cheerful "got it".
