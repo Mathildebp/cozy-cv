@@ -267,7 +267,7 @@ export const ISLANDS = [
       { id: "c_duck",  x: 7, y: 1, junk: "A rubber duck. ...How'd that get in here?" },
       { id: "c_can",   x: 9, y: 1, junk: "A dented tin can. Hard pass." },
       // row 2 — game memories
-      { id: "c_aoe",   x: 5, y: 2, game: "Age of Empires", lines: ["Wololo.", "Patience, really: build, lose, rebuild, repeat."] },
+      { id: "c_aoe",   x: 5, y: 2, game: "Age of Empires", lines: ["You don't win in a turn.", "You lay foundations, and let them grow."] },
       { id: "c_dofus", x: 7, y: 2, game: "Dofus",          lines: ["A teenage classic of mine.", "I always end up coming back to it, sooner or later."] },
       { id: "c_anno",  x: 9, y: 2, game: "Anno",           lines: ["City-builder zen.", "Supply chains are weirdly soothing."] },
       // row 3 — one more game, then junk
@@ -370,7 +370,7 @@ export const ISLANDS = [
 
   {
     id: "island5",
-    name: "Creation & System",
+    name: "Mystery & Melody",
     origin: [5, 23],
     ambient: [150, 160, 205, 0.11],
     // 16x14 with an eastern dock (rows 6-7, reaching col 15) for the west bridge.
@@ -454,7 +454,7 @@ export const ISLANDS = [
 export const ISLAND_BY_ID = Object.fromEntries(ISLANDS.map((i) => [i.id, i]));
 
 // Every interactive chest across the archipelago, tagged with its island id so
-// the world scene can place it and the XP Rience interaction can count progress.
+// the world scene can place it and the Lore Looter interaction can count progress.
 export const ALL_CHESTS = ISLANDS.flatMap((isl) =>
   (isl.chests ?? []).map((c) => ({ ...c, island: isl.id })),
 );
@@ -481,7 +481,7 @@ export const BRIDGES = [
   { orient: "v", x: 33, y: 19 }, // hub <-> island2 (Imaginary Archipelago)
   { orient: "v", x: 33, y: 38 }, // hub <-> island4 (Human Trace Garden)
   { orient: "h", x: 44, y: 29 }, // hub <-> island3 (Adventure Camp)
-  { orient: "h", x: 21, y: 29 }, // hub <-> island5 (Creation & System)
+  { orient: "h", x: 21, y: 29 }, // hub <-> island5 (Mystery & Melody)
 ];
 
 // Deck tiles a bridge occupies, as [x, y] world tiles.

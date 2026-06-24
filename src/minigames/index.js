@@ -15,8 +15,8 @@ export const MINIGAMES = {
     await say(k, [
       "Oh — a new face! Welcome to the islands.",
       "I'm Ganymede. I help folks find their way around here.",
-      "Every islander keeps a Memory Brick. Chat with them, lend a hand,",
-      "and they'll share one with you. Six in all.",
+      "Each of us islanders keeps a Memory Brick — me included.",
+      "Lend a hand and we'll share ours. Six in all.",
     ], { speaker: npc.name, color: npc.color });
 
     const pick = await choose(k, "Need a hand getting started?", [
@@ -26,7 +26,7 @@ export const MINIGAMES = {
     if (pick === 0) {
       await say(k, [
         "Four bridges leave this hub, one to each island.",
-        "A misty grove, a noisy camp, a quiet garden, a workshop.",
+        "A misty grove, a noisy camp, a quiet garden, a stage of riddles and song.",
         "No rush. There's no way to lose here.",
       ], { speaker: npc.name, color: npc.color });
     } else {
@@ -72,7 +72,7 @@ export const MINIGAMES = {
     return true;
   },
 
-  // XP RIENCE - Curiosity. Points the player at the real chests behind camp;
+  // LORE LOOTER - Curiosity. Points the player at the real chests behind camp;
   // the brick is earned out in the world by opening the last game chest (see
   // world.js). This only guides progress, and acts as a safety net that hands
   // over the brick if every game chest is open but it was never claimed (e.g.
@@ -149,9 +149,9 @@ export const MINIGAMES = {
   // life, the universe and everything). No fail state: wrong guesses just get a hint.
   async gerard(k, npc) {
     await say(k, [
-      "A visitor. Good - this lock needs a mind, not a key.",
+      "A visitor. Good — this lock needs a mind, not a key.",
       "Two clues, left to right:",
-      "  A bug skitters past - count an insect's legs.",
+      "  A bug skitters past — count an insect's legs.",
       "  A week turns once, day by day.",
       "Multiply them in order. What number opens the lock?",
     ], { speaker: npc.name, color: npc.color });
@@ -164,7 +164,7 @@ export const MINIGAMES = {
 
     await say(k, [
       "...forty-two. The lock clicks open.",
-      "101010, in my tongue - the answer to life, the universe,",
+      "101010, in my tongue — the answer to life, the universe,",
       "and one stubborn bug. That's understanding.",
       "Take the brick. You debugged the world.",
     ], { speaker: npc.name, color: npc.color });
@@ -179,7 +179,7 @@ export const MINIGAMES = {
     preloadClips(); // warm up the YouTube player while she sets the scene
     await say(k, [
       "Shh. Close your eyes and just listen.",
-      "Three guesses each. Name what your heart hears.",
+      "One guess each. Name what your heart hears.",
     ], { speaker: npc.name, color: npc.color });
 
     const rounds = [

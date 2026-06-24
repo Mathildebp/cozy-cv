@@ -14,23 +14,31 @@ export function registerTitle(k) {
     // clips are audible on mobile (which blocks non-gesture media playback).
     armClipUnlock();
 
-    // Warm backdrop.
+    const cx = () => k.width() / 2;
+    // Sky/sand horizon. Everything is laid out as a compact stack straddling
+    // this line with fixed pixel offsets, so the screen stays balanced on any
+    // viewport ratio instead of stretching into big empty gaps.
+    const horizon = () => k.height() / 2;
+
+    // Warm backdrop: teal sky over sand, with a soft band blending the seam so
+    // the horizon reads as intentional rather than a hard split.
     k.add([k.fixed(), k.layer("ui"), k.z(0), {
       draw() {
-        k.drawRect({ width: k.width(), height: k.height(), color: k.rgb(244, 211, 160) });
-        k.drawRect({ width: k.width(), height: k.height() / 2, color: k.rgb(168, 214, 196), opacity: 0.5 });
+        const w = k.width(), hy = horizon();
+        k.drawRect({ width: w, height: k.height(), color: k.rgb(244, 211, 160) });
+        k.drawRect({ width: w, height: hy, color: k.rgb(168, 214, 196), opacity: 0.5 });
+        // Gentle horizon glow to ease the two-tone seam.
+        k.drawRect({ pos: k.vec2(0, hy - 24), width: w, height: 48, color: k.rgb(250, 241, 220), opacity: 0.35 });
       },
     }]);
-
-    const cx = () => k.width() / 2;
 
     k.add([
       k.text("My World Quest", { font: "sprout", size: 44, align: "center" }),
       k.color(74, 53, 38), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
-      { update() { this.pos = k.vec2(cx(), k.height() * 0.3); } },
+      { update() { this.pos = k.vec2(cx(), horizon() - 96); } },
     ]);
     const tagline = "a little world to get to know me, one chat at a time";
-    const taglineY = () => k.height() * 0.3 + 42;
+    const taglineY = () => horizon() - 52;
     // Soft cream plate behind the tagline so the text reads clearly over the
     // muddy cream/teal blend of the upper backdrop.
     k.add([k.fixed(), k.layer("ui"), k.z(0.5), {
@@ -47,7 +55,7 @@ export function registerTitle(k) {
     k.add([
       k.text("by Mathilde Belda", { font: "sprout", size: 12, align: "center" }),
       k.color(110, 84, 60), k.anchor("center"), k.opacity(0.7), k.fixed(), k.layer("ui"), k.z(1),
-      { update() { this.pos = k.vec2(cx(), k.height() * 0.3 + 62); } },
+      { update() { this.pos = k.vec2(cx(), horizon() - 28); } },
     ]);
 
     // PLAY button (frames: 2 = PLAY, 3 = PLAY pressed).
@@ -55,7 +63,7 @@ export function registerTitle(k) {
       k.sprite("playButton", { frame: 2 }),
       k.anchor("center"), k.scale(2), k.fixed(), k.layer("ui"), k.z(1),
       k.area(),
-      { update() { this.pos = k.vec2(cx(), k.height() * 0.58); } },
+      { update() { this.pos = k.vec2(cx(), horizon() + 60); } },
     ]);
     btn.onHover(() => (btn.frame = 3));
     btn.onHoverEnd(() => (btn.frame = 2));
@@ -66,7 +74,7 @@ export function registerTitle(k) {
     k.add([
       k.text(controlsHint, { font: "sprout", size: 14, align: "center" }),
       k.color(110, 84, 60), k.anchor("center"), k.fixed(), k.layer("ui"), k.z(1),
-      { update() { this.pos = k.vec2(cx(), k.height() * 0.78); } },
+      { update() { this.pos = k.vec2(cx(), horizon() + 140); } },
     ]);
 
     const start = () => {

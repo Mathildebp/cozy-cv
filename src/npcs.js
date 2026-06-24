@@ -27,7 +27,7 @@ export const NPCS = [
   },
   {
     id: "xprience",
-    name: "XP Rience",
+    name: "Lore Looter",
     island: "island3",
     tile: [8, 7],
     color: [176, 200, 90],

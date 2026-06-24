@@ -26,6 +26,7 @@ import { openGuestbook } from "../ui/guestbook.js";
 import { playStep, playPickup, playChest, playBook, playBrickEarned } from "../audio/sound.js";
 
 const IDLE_FRAME = { down: 0, up: 4, left: 8, right: 12 };
+const FACE_VEC = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 const SPEED = 80;
 const INTERACT_DIST = 22;
 const LABEL_DIST = 28;
@@ -165,7 +166,7 @@ export function registerWorld(k) {
       }
     }
 
-    // --- Memory chests (XP Rience's, opened in the world like a pickup) ---
+    // --- Memory chests (Lore Looter's, opened in the world like a pickup) ---
     // A bubble bobs over each closed chest; opening it swaps to the open-lid
     // sprite (kept open), drops the bubble, and reveals a game memory or junk.
     const chests = [];
@@ -307,8 +308,8 @@ export function registerWorld(k) {
 
       const tdir = touchControls.moveDir;
       const dir = k.vec2(
-        (k.isKeyDown("right") ? 1 : 0) - (k.isKeyDown("left") ? 1 : 0) + tdir.x,
-        (k.isKeyDown("down") ? 1 : 0) - (k.isKeyDown("up") ? 1 : 0) + tdir.y,
+        (k.isKeyDown("right") || k.isKeyDown("d") ? 1 : 0) - (k.isKeyDown("left") || k.isKeyDown("a") ? 1 : 0) + tdir.x,
+        (k.isKeyDown("down") || k.isKeyDown("s") ? 1 : 0) - (k.isKeyDown("up") || k.isKeyDown("w") ? 1 : 0) + tdir.y,
       );
 
       if (dir.x === 0 && dir.y === 0) {
@@ -360,11 +361,22 @@ export function registerWorld(k) {
         const d = player.pos.dist(obj.pos);
         if (d < bestD) { best = { kind: "item", obj }; bestD = d; }
       }
+      // Chests sit in a tight 3x3 grid and don't block movement, so several are
+      // often within reach at once. Target the chest the player is facing toward
+      // (best alignment with the facing direction) rather than the nearest one —
+      // a forgiving ~75 deg cone, so a head-on chest opens easily while a junk
+      // chest beside or behind the player doesn't pop open by accident.
+      const [fx, fy] = FACE_VEC[facing];
+      let chestPick = null, chestAlign = 0.25, chestDist = 0;
       for (const obj of chests) {
         if (obj.opened) continue;
-        const d = player.pos.dist(obj.pos);
-        if (d < bestD) { best = { kind: "chest", obj }; bestD = d; }
+        const to = obj.pos.sub(player.pos);
+        const len = to.len();
+        if (len < 1 || len > INTERACT_DIST) continue;
+        const align = (to.x * fx + to.y * fy) / len;
+        if (align > chestAlign) { chestPick = obj; chestAlign = align; chestDist = len; }
       }
+      if (chestPick && chestDist < bestD) { best = { kind: "chest", obj: chestPick }; bestD = chestDist; }
       for (const obj of books) {
         if (obj.read) continue;
         const d = player.pos.dist(obj.pos);
