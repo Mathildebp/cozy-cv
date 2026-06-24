@@ -184,8 +184,8 @@ export const MINIGAMES = {
 
     const rounds = [
       { video: "c56t7upa8Bk", start: 120, clue: "♪ a slow tide of strings, rising, and rising...", opts: ["Time — Inception", "The Dark Knight", "Gladiator"], answer: 0, react: ["Inception. It always feels like waking up."] },
-      { video: "0lDvyER0E6Y", start: 17, clue: "♪ a voice woven straight into the forest...", opts: ["Pirates of the Caribbean", "Songcord — Avatar", "Titanic"], answer: 1, react: ["Avatar's Songcord. The whole world sings back."] },
-      { video: "bpa9YbzCF3c", start: 9, clue: "♪ a children's choir circling a bubbling cauldron...", opts: ["Amélie", "Harry Potter — Double Trouble", "Up"], answer: 1, react: ["Double Trouble. Something wicked — and you heard it coming."] },
+      { video: "0lDvyER0E6Y", start: 17, clue: "♪ a voice woven straight into the forest...", opts: ["Princess Mononoke", "Songcord — Avatar", "Titanic"], answer: 1, react: ["Avatar's Songcord. The whole world sings back."] },
+      { video: "bpa9YbzCF3c", start: 9, clue: "♪ a children's choir circling a bubbling cauldron...", opts: ["The Chronicles of Narnia", "Harry Potter — Double Trouble", "Sleepy Hollow"], answer: 1, react: ["Double Trouble. Something wicked — and you heard it coming."] },
       { video: "BEm0AjTbsac", start: 10, clue: "♪ low voices carrying over a far green hill...", opts: ["The Hobbit — Misty Mountains", "Skyrim", "Game of Thrones"], answer: 0, react: ["The Misty Mountains. Home, and the ache to leave it."] },
     ];
 
