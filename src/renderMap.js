@@ -152,9 +152,11 @@ export function buildMap(k, mapData) {
     const px = obj.x * TILE_SIZE + TILE_SIZE / 2; // horizontal center of the tile
     const py = obj.y * TILE_SIZE + TILE_SIZE;     // base sits at bottom of the tile
     const flat = FLAT_TYPES.has(obj.type);
-    // A "book" has no sprite in the asset set, so it's drawn as a small upright
-    // primitive (cover/pages/spine) instead of a k.sprite (used for clue books).
+    // A "book" or "bug" has no sprite in the asset set, so each is drawn as a
+    // small primitive (clue props) instead of a k.sprite.
     const isBook = obj.type === "book";
+    const isBug = obj.type === "bug";
+    const isPrimitive = isBook || isBug;
     const comps = [
       k.pos(px, py),
       k.anchor("bot"),
@@ -164,13 +166,14 @@ export function buildMap(k, mapData) {
       k.z(flat ? Z_FLAT : py),
       "mapObject",
     ];
-    if (isBook) comps.unshift(k.color(...(obj.color ?? [150, 120, 200])));
+    if (isPrimitive) comps.unshift(k.color(...(obj.color ?? [150, 120, 200])));
     else comps.unshift(k.sprite(obj.type));
     // Props with a `label` reveal that text when the player walks near (puzzle
     // clues); world.js reads the tag + stored text to draw the floating label.
     if (obj.label) comps.push({ labelText: obj.label }, "labeled");
     const added = k.add(comps);
     if (isBook) added.onDraw(() => drawClueBook(k, added.color));
+    if (isBug) added.onDraw(() => drawClueBug(k, added.color));
     if (BLOCKING_TYPES.has(obj.type)) {
       if (TREE_TYPES.has(obj.type)) {
         blockers.push({ x: px - TRUNK_HALF_W, y: py - TRUNK_H, w: 2 * TRUNK_HALF_W, h: TRUNK_H });
@@ -247,6 +250,28 @@ function drawClueBook(k, color) {
   k.drawRect({ pos: k.vec2(0, 0), width: 9, height: 12, radius: 1, anchor: "bot", color: cover });
   k.drawRect({ pos: k.vec2(2, -1), width: 4, height: 10, anchor: "bot", color: page });
   k.drawRect({ pos: k.vec2(-3.5, 0), width: 2, height: 12, anchor: "bot", color: dark });
+}
+
+// A small top-down beetle primitive (oval shell, head, and the all-important
+// SIX legs - three per side) for the "insect = 6" puzzle clue. `color` is the
+// object's k.color Color tinting the shell. Drawn above the base (anchor "bot",
+// so y grows upward as it goes negative).
+function drawClueBug(k, color) {
+  const { r, g, b } = color;
+  const shell = k.rgb(r, g, b);
+  const dark = k.rgb(Math.max(0, r - 60), Math.max(0, g - 60), Math.max(0, b - 60));
+  const legY = [-4, -7, -10]; // three leg pairs along the body
+  for (const y of legY) {
+    k.drawLine({ p1: k.vec2(-2.5, y), p2: k.vec2(-7, y - 1.5), width: 1.4, color: dark });
+    k.drawLine({ p1: k.vec2(2.5, y), p2: k.vec2(7, y - 1.5), width: 1.4, color: dark });
+  }
+  // Oval shell body, with a centre seam down the back.
+  k.drawEllipse({ pos: k.vec2(0, -7), radiusX: 4, radiusY: 6, color: shell });
+  k.drawLine({ p1: k.vec2(0, -2), p2: k.vec2(0, -12), width: 1, color: dark });
+  // Head and a pair of little antennae.
+  k.drawCircle({ pos: k.vec2(0, -13), radius: 2.5, color: dark });
+  k.drawLine({ p1: k.vec2(-1, -15), p2: k.vec2(-2.5, -17), width: 1, color: dark });
+  k.drawLine({ p1: k.vec2(1, -15), p2: k.vec2(2.5, -17), width: 1, color: dark });
 }
 
 // Keep a moving object's draw order (z) in sync with its base Y, so it slips

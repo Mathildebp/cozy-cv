@@ -394,15 +394,16 @@ export const ISLANDS = [
       "wwwwwggggggwwwww",
     ],
     objects: [
-      // --- Gerard's logic puzzle (left platform): the week clue ---
+      // --- Gerard's logic puzzle (left platform): the two clues ---
       // The riddle multiplies an insect's legs (6) by the days in a week (7) -> 42,
-      // the answer Gerard asks for. The book is the in-world "week = 7" clue; the
-      // "insect = 6" clue lives in Gerard's dialogue.
-      // It sits on row 7, in FRONT of Gerard's house (whose footprint covers
-      // cols 3-6 of row 6); placing the clue on row 6 hid it behind the house.
-      // Walk near the book to reveal its title; "a week" -> 7 days. There is no
-      // book sprite in the asset set, so it's drawn as a small primitive (see
-      // renderMap.js); `color` tints its cover.
+      // the answer Gerard asks for. Both clues sit in the world, read left to
+      // right: a beetle (count its six legs) then the book ("a week" -> 7 days).
+      // They sit on row 7, in FRONT of Gerard's house (whose footprint covers
+      // cols 3-6 of row 6); placing a clue on row 6 hid it behind the house.
+      // Neither has a sprite in the asset set, so both are drawn as small
+      // primitives (see drawClueBug / drawClueBook in renderMap.js); `color`
+      // tints each. Walk near one to reveal its label.
+      { type: "bug", x: 3, y: 7, color: [120, 150, 90], label: "a beetle — six legs" }, // the insect (= 6)
       { type: "book", x: 4, y: 7, color: [160, 140, 210], label: "\"Days of the Week\"" }, // the book (= 7)
       // --- Melodyssee's music stage (right platform) ---
       { type: "rugWideGreen", x: 9, y: 8 },  // the stage rug (cols 9-10)
