@@ -23,6 +23,18 @@ const PARCHMENT_EDGE = [214, 187, 130];
 const BORDER = [122, 90, 58];
 const INK = [74, 53, 38];
 
+// Shared tag on every dialogue object (panel, text, choice rows). Opening a new
+// dialogue first wipes any still-standing one — both its objects and its input
+// handlers — so two panels can never stack into the unreadable, overlapping
+// text seen on mobile. kaplay's destroy() is immediate, so this fully clears the
+// old UI the same frame the new one appears.
+const DLG_TAG = "dialogueUi";
+let activeCleanup = null; // cancels the on-screen dialogue's input handlers
+function clearDialogueUi(k) {
+  if (activeCleanup) { activeCleanup(); activeCleanup = null; }
+  k.get(DLG_TAG).forEach((o) => k.destroy(o));
+}
+
 const PANEL_H = 116;
 const MARGIN = 18;
 const PAD = 16;
@@ -31,7 +43,7 @@ const PAD = 16;
 // passed callback so children can position themselves against it. `panelH`
 // defaults to PANEL_H but choice menus pass a taller value so every option fits.
 function addPanel(k, onLayout, panelH = PANEL_H) {
-  const panel = k.add([k.fixed(), k.layer("ui"), k.z(100)]);
+  const panel = k.add([k.fixed(), k.layer("ui"), k.z(100), DLG_TAG]);
   panel.onDraw(() => {
     const w = k.width();
     const h = k.height();
@@ -66,6 +78,7 @@ export function say(k, lines, opts = {}) {
   const tint = opts.color ?? BORDER;
 
   return new Promise((resolve, reject) => {
+    clearDialogueUi(k); // never stack on top of a dialogue that's still up
     dialogue.active = true;
     duckMusic(true); // step the ambient bed back so the speech blips read clearly
     let layout = { x: MARGIN, y: 0, w: 200, h: PANEL_H };
@@ -78,6 +91,7 @@ export function say(k, lines, opts = {}) {
       k.fixed(),
       k.layer("ui"),
       k.z(101),
+      DLG_TAG,
     ]);
     const body = k.add([
       k.text("", { font: "sprout", size: 18, lineSpacing: 6, width: 100 }),
@@ -86,6 +100,7 @@ export function say(k, lines, opts = {}) {
       k.fixed(),
       k.layer("ui"),
       k.z(101),
+      DLG_TAG,
     ]);
     const indicator = k.add([
       k.sprite("dialogNext", { anim: "blink" }),
@@ -95,6 +110,7 @@ export function say(k, lines, opts = {}) {
       k.layer("ui"),
       k.z(101),
       k.opacity(0),
+      DLG_TAG,
     ]);
 
     let i = 0;
@@ -143,6 +159,7 @@ export function say(k, lines, opts = {}) {
 
     const teardown = () => {
       cleanup();
+      if (activeCleanup === cleanup) activeCleanup = null;
       k.destroy(panel);
       k.destroy(nameTag);
       k.destroy(body);
@@ -174,6 +191,7 @@ export function say(k, lines, opts = {}) {
         reject(CANCELLED);
       },
     );
+    activeCleanup = cleanup; // let the next dialogue tear this one's input down
   });
 }
 
@@ -184,6 +202,7 @@ const ROWS_TOP = 26; // gap between prompt and first option
 
 export function choose(k, prompt, options) {
   return new Promise((resolve, reject) => {
+    clearDialogueUi(k); // never stack on top of a dialogue that's still up
     dialogue.active = true;
     // Grow the panel to fit the prompt plus every option so nothing is clipped.
     const panelH = Math.max(PANEL_H, PAD + ROWS_TOP + options.length * ROW_H + PAD);
@@ -197,6 +216,7 @@ export function choose(k, prompt, options) {
       k.fixed(),
       k.layer("ui"),
       k.z(101),
+      DLG_TAG,
     ]);
 
     let sel = 0;
@@ -208,6 +228,7 @@ export function choose(k, prompt, options) {
         k.fixed(),
         k.layer("ui"),
         k.z(101),
+        DLG_TAG,
         { idx, label: opt },
       ]),
     );
@@ -224,6 +245,7 @@ export function choose(k, prompt, options) {
         k.fixed(),
         k.layer("ui"),
         k.z(99),
+        DLG_TAG,
         { idx },
       ]),
     );
@@ -248,8 +270,10 @@ export function choose(k, prompt, options) {
       });
     });
 
+    const cancelInput = () => handles.forEach((h) => h.cancel());
     const teardown = () => {
-      handles.forEach((h) => h.cancel());
+      cancelInput();
+      if (activeCleanup === cancelInput) activeCleanup = null;
       k.destroy(panel);
       k.destroy(promptText);
       rows.forEach((r) => k.destroy(r));
@@ -272,5 +296,6 @@ export function choose(k, prompt, options) {
       k.onKeyPress(["space", "enter"], () => finish(sel)),
       k.onKeyPress("escape", () => { teardown(); reject(CANCELLED); }),
     ];
+    activeCleanup = cancelInput; // let the next dialogue tear this one's input down
   });
 }
