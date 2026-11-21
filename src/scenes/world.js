@@ -10,7 +10,7 @@
 // whatever the player is standing next to (NPC or lost item).
 
 import { TILE_SIZE } from "../tilesets.js";
-import { buildMap, attachYSort } from "../renderMap.js";
+import { buildMap, attachYSort, attachShadow } from "../renderMap.js";
 import { ISLANDS, ISLAND_BY_ID, START, composeWorld, worldTile, GAME_CHESTS, ALL_BOOKS, GUESTBOOK } from "../data/islands.js";
 import { NPCS } from "../npcs.js";
 import { buildHouses } from "../houses.js";
@@ -90,6 +90,7 @@ export function registerWorld(k) {
       "player", // houses read this to fade their roof when you step inside
     ]);
     attachYSort(player);
+    attachShadow(k, player);
     player.frame = IDLE_FRAME[START.face] ?? 0;
 
     // Props carrying a `label` (e.g. the puzzle clues) reveal their text as a
@@ -128,6 +129,7 @@ export function registerWorld(k) {
         { def, facing: def.facing, home: tilePos(wx, wy), t: k.rand(1, 3), target: null },
       ]);
       attachYSort(obj);
+      attachShadow(k, obj);
       obj.frame = IDLE_FRAME[def.facing];
       map.addBlocker({ x: obj.pos.x - 5, y: obj.pos.y - 6, w: 10, h: 6 });
       attachNpcBehavior(k, obj, map);

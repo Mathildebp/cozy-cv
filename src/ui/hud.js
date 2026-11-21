@@ -7,24 +7,38 @@ import { BRICKS, hasBrick, state } from "../state.js";
 import { drawBrick } from "./brick.js";
 import { toggleMute, setMuted, isMuted } from "../audio/sound.js";
 
-const SLOT = 22;
-const GAP = 4;
+const SLOT = 30;
+const GAP = 5;
 const ORIGIN = 14;
 
 export function addHud(k) {
   const root = k.add([k.fixed(), k.layer("ui"), k.z(90)]);
 
+  // When a brick is earned, its slot pops (scale bump + bright ring) for a
+  // moment so the progress registers even mid-dialogue.
+  const pulse = new Map(); // npc id -> seconds left
+  const seen = new Set(BRICKS.filter((b) => hasBrick(b.npc)).map((b) => b.npc));
+  root.onUpdate(() => {
+    for (const b of BRICKS) {
+      if (hasBrick(b.npc) && !seen.has(b.npc)) { seen.add(b.npc); pulse.set(b.npc, 1); }
+    }
+    for (const [id, t] of pulse) { if (t - k.dt() <= 0) pulse.delete(id); else pulse.set(id, t - k.dt()); }
+  });
+
   // Backing strip + per-slot glow, drawn so it tracks any canvas size.
   root.onDraw(() => {
     const n = BRICKS.length;
     const w = n * SLOT + (n - 1) * GAP + 12;
-    k.drawRect({ pos: k.vec2(ORIGIN - 6, ORIGIN - 6), width: w, height: SLOT + 12, radius: 8, color: k.rgb(40, 30, 22), opacity: 0.35 });
+    k.drawRect({ pos: k.vec2(ORIGIN - 6, ORIGIN - 6), width: w + 34, height: SLOT + 12, radius: 8, color: k.rgb(40, 30, 22), opacity: 0.45 });
     BRICKS.forEach((b, i) => {
       const cx = ORIGIN + i * (SLOT + GAP) + SLOT / 2;
       const cy = ORIGIN + SLOT / 2;
       if (hasBrick(b.npc)) {
+        const p = pulse.get(b.npc) ?? 0; // 1 -> 0 over the pop
+        const size = SLOT * (1 + 0.45 * Math.sin(p * Math.PI));
         k.drawCircle({ pos: k.vec2(cx, cy), radius: SLOT * 0.7, color: k.rgb(...b.color), opacity: 0.3 });
-        drawBrick(k, cx, cy, SLOT, b.color);
+        if (p > 0) k.drawCircle({ pos: k.vec2(cx, cy), radius: SLOT * (1.4 - 0.7 * p), color: k.rgb(255, 255, 255), opacity: 0.5 * p, fill: false, outline: { width: 2, color: k.rgb(255, 255, 255) } });
+        drawBrick(k, cx, cy, size, b.color);
       } else {
         drawBrick(k, cx, cy, SLOT, b.color, 0.22);
       }
@@ -35,8 +49,8 @@ export function addHud(k) {
   const n = BRICKS.length;
   const counterX = ORIGIN + n * (SLOT + GAP) + 8;
   k.add([
-    k.text("", { font: "sprout", size: 16 }),
-    k.pos(counterX, ORIGIN + 3),
+    k.text("", { font: "sprout", size: 20 }),
+    k.pos(counterX, ORIGIN + 4),
     k.color(255, 255, 255),
     k.fixed(),
     k.layer("ui"),

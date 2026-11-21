@@ -283,3 +283,22 @@ export function attachYSort(obj, footOffset = 0) {
     obj.z = obj.pos.y + footOffset;
   });
 }
+
+// A soft oval shadow under a character's feet. It lives in the terrain layer
+// (above grass, dirt, bridges and floor mats, below every upright prop) and
+// follows `obj` each frame, so characters read as standing ON the ground instead
+// of floating over it. Destroyed together with its owner.
+const Z_SHADOW = 5;
+export function attachShadow(k, obj, { rx = 6, ry = 2.5, dy = -1 } = {}) {
+  const shadow = k.add([
+    k.layer("terrain"),
+    k.z(Z_SHADOW),
+    {
+      draw() {
+        k.drawEllipse({ pos: k.vec2(obj.pos.x, obj.pos.y + dy), radiusX: rx, radiusY: ry, color: k.rgb(40, 30, 22), opacity: 0.28 });
+      },
+    },
+  ]);
+  obj.onDestroy(() => k.destroy(shadow));
+  return shadow;
+}
