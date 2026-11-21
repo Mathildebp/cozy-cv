@@ -36,30 +36,14 @@ The visual universe is powered entirely by the popular **Sprout Lands Asset Pack
 
 ## 🚀 Getting Started
 
-### Folder structure
-
-- `src` - source code for your kaplay project
-- `public` - distribution folder, contains your index.html, built js bundle and static assets
-
-
-### Development
+Requires Node 22.
 
 ```sh
-$ npm run dev
+npm install
+npm run dev      # dev server on http://localhost:3001
+npm run build    # production build in dist/
 ```
 
-will start a dev server at http://localhost:8000
+Analytics (PostHog) are optional: copy `.env.example` to `.env` and fill in the keys. Without them the game runs the same.
 
-### Distribution
-
-```sh
-$ npm run build
-```
-
-will build your js files into `dist/`
-
-```sh
-$ npm run zip
-```
-
-will build your game and package into a .zip file, you can upload to your server or itch.io / newground etc.
+Pixel-art assets: [Sprout Lands](https://cupnooble.itch.io/sprout-lands-asset-pack) by Cup Nooble.
